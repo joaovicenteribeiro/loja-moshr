@@ -121,7 +121,7 @@ const P=[
 ].map(a=>({id:a[0],n:a[1],c:a[2],p:a[3],d:a[4],t:a[5],s:T[a[6]],k:a[7]}));
 const pr=p=>p.d||p.p,price=p=>p.d?`<s>${R(p.p)}</s> <b class="red">${R(p.d)}</b>`:R(p.p);
 const avail=(p,s,k)=>(p.id*31+s.charCodeAt(0)+k.charCodeAt(0))%6!==0; // disponibilidade fictícia
-const ph=p=>p.img?`<div class="ph im"><img src="${p.img}" alt="${p.n}" loading="lazy"></div>`:`<div class="ph ${p.id%2?"":"b"}"><span class="mono">MSH-${String(p.id).padStart(3,"0")}</span><b>${p.t}</b><i class="dot"></i></div>`;
+const ph=p=>p.img?`<div class="ph im"><img src="${p.img}" alt="${p.n}" loading="lazy" onerror="this.remove()"></div>`:`<div class="ph ${p.id%2?"":"b"}"><span class="mono">MSH-${String(p.id).padStart(3,"0")}</span><b>${p.t}</b><i class="dot"></i></div>`;
 const card=p=>`<a class="card" href="#produto-${p.id}">${ph(p)}<div class="ci"><span class="mono">${C[p.c]}</span><h3>${p.n}</h3><span class="mono">${price(p)}</span></div></a>`;
 let L=[];try{L=JSON.parse(localStorage.getItem("moshr-cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("moshr-cart",JSON.stringify(L))}catch(e){}$("#n").textContent=L.reduce((a,i)=>a+i.q,0)};
@@ -129,7 +129,7 @@ let LIVE=false;let F={cat:"todas",size:"",max:0,sort:"novo",q:""},sel={},step="c
 
 function nav(h){$("#nav").innerHTML=[["home","Início"],["loja","Tudo"],...Object.entries(C).map(([k,v])=>["loja-"+k,v])].map(([k,v])=>`<a href="#${k}" ${h==k?"aria-current=page":""}>${v}</a>`).join("")}
 function home(){return `<section class="hero"><div><span class="mono">COLEÇÃO 01 / DEMO</span><h1>Wear your<br>own<br><span>identity.</span></h1><a class="btn" href="#loja">Ver coleção →</a></div>
-<div class="blk"><p class="mono">MOSHR — MODA ALTERNATIVA INDEPENDENTE. GRUNGE, GOTH, PUNK, EMO, CYBER E STREETWEAR.</p><p class="big">${P.length}<br>PEÇAS</p><p class="mono">ENVIO PARA TODO O BRASIL · PIX E CARTÃO</p></div></section>
+<div class="blk"><p class="mono">MOSHR — MODA ALTERNATIVA INDEPENDENTE. GRUNGE, GOTH, PUNK, EMO, CYBER E STREETWEAR.</p><p class="big">${P.length}<br>${P.length==1?"PEÇA":"PEÇAS"}</p><p class="mono">ENVIO PARA TODO O BRASIL · PIX E CARTÃO</p></div></section>
 <section class="sec"><div class="wrap"><div class="sh"><h2>Subculturas</h2></div><div class="cl">${Object.entries(C).map(([k,v],i)=>`<a href="#loja-${k}"><span class="mono">0${i+1}</span><span>${v}</span><span>→</span></a>`).join("")}</div></div></section>
 <section class="sec"><div class="wrap"><div class="sh"><h2>Novidades</h2><a class="mono" href="#loja">VER TUDO →</a></div><div class="grid">${P.slice(-4).reverse().map(card).join("")}</div></div></section>
 <section class="man"><div class="wrap"><span class="mono">MANIFESTO</span><p style="margin-top:14px">Não seguimos tendência. Vestimos quem prefere o barulho.</p><a class="btn o" style="color:var(--bg);border-color:var(--bg)" href="#loja">Entrar →</a></div></section>
@@ -146,7 +146,7 @@ $("#cnt").textContent=r.length+" ITENS";$("#res").innerHTML=r.length?`<div class
 function prod(id){const p=P.find(x=>x.id==id);if(!p)return `<div class="wrap" style="padding:64px 20px"><h2>Produto não encontrado</h2><p><a href="#loja">Voltar à coleção</a></p></div>`;
 if(sel.id!=id)sel={id:+id,s:"",k:p.k[0],q:1};
 const rel=P.filter(x=>x.c==p.c&&x.id!=p.id).concat(P.filter(x=>x.c!=p.c)).slice(0,4);
-return `<div class="wrap"><div class="pg">${ph(p)}<div class="pi"><span class="mono">${C[p.c]} · MSH-${String(p.id).padStart(3,"0")}</span><h1>${p.n}</h1><div class="mono" style="font-size:1.05rem">${price(p)}</div>
+return `<div class="wrap"><div class="pg">${ph(p.imgs&&p.imgs[sel.k]?{...p,img:p.imgs[sel.k]}:p)}<div class="pi"><span class="mono">${C[p.c]} · MSH-${String(p.id).padStart(3,"0")}</span><h1>${p.n}</h1><div class="mono" style="font-size:1.05rem">${price(p)}</div>
 <p style="margin:0">${p.desc||"Peça de demonstração da coleção 01. Descrição fictícia para teste de layout."}</p>
 <div><p class="lab">Cor: ${sel.k}</p><div class="chips" style="margin:0">${p.k.map(k=>`<button class="chip" data-k="${k}" aria-pressed="${sel.k==k}">${k}</button>`).join("")}</div></div>
 <div><p class="lab">Tamanho</p><div class="chips" style="margin:0">${p.s.map(s=>`<button class="chip" data-s="${s}" aria-pressed="${sel.s==s}" ${avail(p,s,sel.k)?"":"disabled"}>${s}</button>`).join("")}</div></div>
@@ -199,8 +199,12 @@ if(CONFIG.checkoutUrl){const q=new URLSearchParams({items:L.map(i=>i.id+":"+i.s+
 else note=`PEDIDO DE TESTE ${no} REGISTRADO. ISTO É UMA SIMULAÇÃO: NENHUMA COBRANÇA FOI FEITA E NENHUMA COMPRA FOI ENVIADA AO FORNECEDOR.`;
 step="done";drawer()}});
 document.addEventListener("keydown",e=>{if(e.key=="Escape")open_(false)});
+function ret(){const s=new URLSearchParams(location.search).get("status")||new URLSearchParams(location.search).get("collection_status");if(!s)return;
+const m={approved:"PAGAMENTO RECEBIDO. ESTAMOS CONFIRMANDO E ENVIAMOS O RASTREIO POR WHATSAPP.",pending:"PAGAMENTO PENDENTE. ASSIM QUE FOR CONFIRMADO, SEU PEDIDO SEGUE PARA ENVIO.",in_process:"PAGAMENTO EM ANÁLISE. AVISAMOS ASSIM QUE FOR CONCLUÍDO."};
+if(s=="approved"||s=="pending"||s=="in_process"){L=[];save()}
+const d=document.createElement("div");d.className="demo mono";d.style.cssText="background:var(--ink);color:var(--bg)";d.textContent=m[s]||"PAGAMENTO NÃO CONCLUÍDO. TENTE NOVAMENTE QUANDO QUISER.";document.body.insertBefore(d,document.body.firstChild);history.replaceState(null,"",location.pathname+location.hash)}
 addEventListener("hashchange",route);save();
-fetch("/api/products").then(r=>r.ok?r.json():Promise.reject()).then(a=>{if(Array.isArray(a)&&a.length){P.length=0;P.push(...a);LIVE=!a.some(p=>p.demo);if(LIVE){const d=$("#demo");d&&d.remove()}}}).catch(()=>{}).finally(()=>{L=L.filter(i=>P.some(p=>p.id==i.id));save();route()});
+fetch("/api/products").then(r=>r.ok?r.json():Promise.reject()).then(a=>{if(Array.isArray(a)&&a.length){P.length=0;P.push(...a);LIVE=!a.some(p=>p.demo);if(LIVE){const d=$("#demo");d&&d.remove()}}}).catch(()=>{}).finally(()=>{L=L.filter(i=>P.some(p=>p.id==i.id));save();ret();route()});
 </script>
 </body>
 </html>

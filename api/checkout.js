@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       payment_methods: { excluded_payment_types: [{ id: "ticket" }, { id: "atm" }], installments: 6 },
       external_reference: String(q.ref || `moshr-${Date.now()}`).slice(0, 64),
       // Dados para você comprar na AliExpress depois que o pagamento for aprovado:
-      metadata: { numero: q.num, cidade: q.cid, uf: q.uf,
+      metadata: { cep: String(q.cep || "").replace(/\D/g, ""), numero: q.num, cidade: q.cid, uf: q.uf,
         fornecedor: lines.map((l) => `${l.qty}x ${l.p.nome} | ${l.size} | ${l.color} | ${l.p.aliexpress || "link não cadastrado"}`) },
     };
     if (site) { preference.back_urls = { success: site, pending: site, failure: site }; preference.auto_return = "approved"; }
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       body: JSON.stringify(preference),
     });
     const data = await r.json();
-    if (!r.ok || !data.init_point) return res.status(502).send("Erro ao criar o pagamento");
+    if (!r.ok || !data.init_point) { console.error("Mercado Pago recusou a preferência:", r.status, JSON.stringify(data)); return res.status(502).send("Erro ao criar o pagamento"); }
     res.redirect(302, data.init_point);
   } catch (e) {
     res.status(500).send("Erro interno");

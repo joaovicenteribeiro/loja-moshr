@@ -27,6 +27,15 @@ Não há importação automática por link: a AliExpress só oferece API a parce
 3. Redeploy e teste a compra com as contas de teste do Mercado Pago.
 4. Só depois troque para as credenciais de produção.
 
+## Fazer o Mercado Pago funcionar (passo a passo)
+1. **Credenciais:** no painel do Mercado Pago, abra sua aplicação (Checkout Pro) > Credenciais. Use as de **teste** primeiro. Se algum token já foi exposto, gere outro.
+2. **Vercel > Settings > Environment Variables:** `MP_ACCESS_TOKEN`, `SITE_URL` (endereço do site, com https) e `MP_WEBHOOK_SECRET` (passo 4). Faça Redeploy depois de salvar.
+3. **Diagnóstico:** abra `https://SEU-SITE/api/health`. Deve mostrar `"mercado_pago_api": "ok (token válido)"`.
+4. **Webhook:** na aplicação, abra Webhooks > Configurar notificações, URL `https://SEU-SITE/api/webhook`, evento **Pagamentos**. Copie a *Assinatura secreta* para `MP_WEBHOOK_SECRET`.
+5. **Compra de teste:** compre uma peça no site. Pague com um comprador de teste do Mercado Pago (não use sua própria conta de vendedor).
+6. **Conferir:** na Vercel, abra Logs da função `api/webhook`. Aparece uma linha `PAGAMENTO` com status, valor, pedido e o link da AliExpress de cada item. Só `"status":"approved"` significa pago.
+7. **Erro 502 no checkout:** veja os Logs de `api/checkout`; o motivo enviado pelo Mercado Pago aparece em "Mercado Pago recusou a preferência".
+
 ## Fluxo de um pedido
 Cliente paga no Mercado Pago → você vê o pagamento aprovado no painel do Mercado Pago → abre os metadados do pagamento (tem produto, tamanho, cor, link da AliExpress, endereço) → compra na AliExpress/DSers com o endereço do cliente → envia o rastreio por WhatsApp/e-mail.
 

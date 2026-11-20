@@ -6,7 +6,7 @@ export default function handler(req, res) {
     const out = Object.values(loadCatalog()).map((p) => ({
       id: p.id, n: p.nome, c: p.categoria, t: String(p.tipo || "").toUpperCase(),
       p: p.preco, d: p.promo || 0, s: p.tamanhos, k: p.cores,
-      img: p.imagem || "", desc: p.descricao || "", med: p.medidas || "", demo: !!p.demo,
+      img: p.imagem || "", imgs: p.imagens || {}, desc: p.descricao || "", med: p.medidas || "", demo: !!p.demo,
     }));
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate");
     res.status(200).json(out);

@@ -28,6 +28,14 @@ rows.forEach((row, i) => {
   const e = (m) => errs.push(`Linha ${n} (${nome || "sem nome"}): ${m}`);
   const preco = num(g("preco")), promo = num(g("promo")), custo = num(g("custo"));
   const tam = list(g("tamanhos")), cor = list(g("cores")), ali = g("aliexpress");
+  // imagem: um caminho único OU uma foto por cor: "Preto=images/a.jpg|Branco=images/b.jpg"
+  const im = g("imagem"); let imagem = im; const imagens = {};
+  if (im.includes("=")) {
+    im.split("|").forEach((x) => { const [k, ...v] = x.split("="); imagens[k.trim()] = v.join("=").trim(); });
+    imagem = Object.values(imagens)[0] || "";
+    Object.keys(imagens).forEach((k) => { if (!cor.includes(k)) e(`foto de cor inexistente: ${k}`); });
+  }
+  [imagem, ...Object.values(imagens)].filter(Boolean).forEach((f) => { if (!fs.existsSync("public/" + f)) warns.push(`Linha ${n} (${nome}): arquivo public/${f} não encontrado.`); });
   if (!nome) e("nome vazio");
   if (!CATS.includes(g("categoria"))) e(`categoria deve ser uma de: ${CATS.join(", ")}`);
   if (!(preco > 0)) e("preco inválido");
@@ -38,7 +46,7 @@ rows.forEach((row, i) => {
   if (!custo) warns.push(`Linha ${n} (${nome}): sem custo informado, margem não calculada.`);
   else if ((venda - custo) / venda < 0.3) warns.push(`Linha ${n} (${nome}): margem de ${(((venda - custo) / venda) * 100).toFixed(0)}% antes de taxas e frete. Confira se compensa.`);
   out.push({ id: i + 1, nome, categoria: g("categoria"), tipo: g("tipo") || "peça", preco, promo, custo,
-    tamanhos: tam, cores: cor, imagem: g("imagem"), descricao: g("descricao"), medidas: g("medidas"), aliexpress: ali, ativo: true });
+    tamanhos: tam, cores: cor, imagem, imagens, descricao: g("descricao"), medidas: g("medidas"), aliexpress: ali, ativo: true });
 });
 if (errs.length) { console.error("Corrija antes de importar:\n- " + errs.join("\n- ")); process.exit(1); }
 fs.writeFileSync(output, JSON.stringify(out, null, 2) + "\n");
