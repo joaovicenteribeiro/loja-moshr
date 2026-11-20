@@ -6,6 +6,18 @@ import { loadCatalog } from "./_catalog.js";
 const FRETE = 24.9, GRATIS_ACIMA = 250; // mesmos valores exibidos no site
 const priceOf = (p) => p.promo || p.preco;
 
+// Formas de pagamento oferecidas no Checkout Pro. Boleto e lotérica ficam sempre de fora.
+// pg: pix | credito | debito | mp (saldo da conta Mercado Pago) | todas (padrão)
+const ALL_TYPES = ["credit_card", "debit_card", "bank_transfer", "account_money", "prepaid_card", "ticket", "atm"];
+const ALLOW = {
+  pix: ["bank_transfer"], credito: ["credit_card"], debito: ["debit_card"], mp: ["account_money"],
+};
+const DEFAULT_ALLOW = ["credit_card", "debit_card", "bank_transfer", "account_money", "prepaid_card"];
+const methodsFor = (pg) => ({
+  excluded_payment_types: ALL_TYPES.filter((t) => !(ALLOW[pg] || DEFAULT_ALLOW).includes(t)).map((id) => ({ id })),
+  installments: 6,
+});
+
 export default async function handler(req, res) {
   try {
     const q = req.query, cat = loadCatalog();
@@ -29,7 +41,7 @@ export default async function handler(req, res) {
         phone: { number: String(q.zap || "").replace(/\D/g, "") },
         address: { zip_code: String(q.cep || "").replace(/\D/g, ""), street_name: String(q.end || "").slice(0, 120) },
       },
-      payment_methods: { excluded_payment_types: [{ id: "ticket" }, { id: "atm" }], installments: 6 },
+      payment_methods: methodsFor(String(q.pg || "todas")),
       external_reference: String(q.ref || `moshr-${Date.now()}`).slice(0, 64),
       // Dados para você comprar na AliExpress depois que o pagamento for aprovado:
       metadata: { cep: String(q.cep || "").replace(/\D/g, ""), numero: q.num, cidade: q.cid, uf: q.uf,

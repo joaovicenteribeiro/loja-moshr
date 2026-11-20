@@ -81,6 +81,7 @@ body.open .dr{transform:none}body.open .shade{display:block}
 .li .ph{aspect-ratio:1;padding:4px}.li .ph b,.li .ph .mono,.li .ph .dot{display:none}
 .sum{border-top:1px solid var(--line);margin-top:auto;padding-top:12px;display:grid;gap:4px}.sum div{display:flex;justify-content:space-between}
 .f{display:grid;gap:8px}.f input{width:100%;padding:11px;background:transparent;border:1px solid var(--line)}
+.pgs{border:1px solid var(--line);padding:10px;display:grid;gap:6px;margin:0}.pgs legend{padding:0 6px}.pgs label{display:flex;gap:8px;align-items:center;font-size:.9rem}.f .pgs input{width:auto;padding:0;accent-color:var(--red)}
 .f .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media (max-width:820px){.hero,.pg{grid-template-columns:1fr}.hero>div{padding:36px 20px}.top .l{display:none}}
 @media (prefers-reduced-motion:reduce){.dr{transition:none}}
@@ -168,7 +169,7 @@ else if(!L.length)h+=`<p class="mono">SUA SACOLA ESTÁ VAZIA.</p><a class="btn" 
 else{h+=L.map((i,k)=>{const p=P.find(z=>z.id==i.id);return `<div class="li">${ph(p)}<div><b>${p.n}</b><br><span class="mono">${i.k} · ${i.s} · ${R(pr(p))}</span></div><div class="qty"><button data-q="${k}" data-d="-1" aria-label="Diminuir">−</button><span>${i.q}</span><button data-q="${k}" data-d="1" aria-label="Aumentar">+</button></div></div>`}).join("");
 h+=`<div class="sum mono"><div><span>SUBTOTAL</span><span>${R(x.s)}</span></div><div><span>FRETE (10–20 DIAS ÚTEIS)</span><span>${x.f?R(x.f):"GRÁTIS"}</span></div><div style="font-size:1rem"><b>TOTAL</b><b>${R(x.t)}</b></div></div>`;
 if(step=="cart")h+=`<button class="btn" id="co" style="margin-top:14px">Finalizar pedido</button>`;
-else h+=`<form class="f" id="ff" style="margin-top:14px" novalidate><input name="nome" placeholder="Nome completo" autocomplete="name"><input name="email" type="email" placeholder="E-mail" autocomplete="email"><input name="zap" placeholder="Telefone com DDD" autocomplete="tel"><div class="two"><input name="cep" placeholder="CEP" autocomplete="postal-code"><input name="num" placeholder="Número"></div><input name="end" placeholder="Endereço" autocomplete="street-address"><div class="two"><input name="cid" placeholder="Cidade"><input name="uf" placeholder="UF" maxlength="2"></div><div class="msg mono" id="fe"></div><button class="btn">Pagar com Mercado Pago</button><button type="button" class="tb" id="bk">← Voltar à sacola</button></form>`}
+else h+=`<form class="f" id="ff" style="margin-top:14px" novalidate><input name="nome" placeholder="Nome completo" autocomplete="name"><input name="email" type="email" placeholder="E-mail" autocomplete="email"><input name="zap" placeholder="Telefone com DDD" autocomplete="tel"><div class="two"><input name="cep" placeholder="CEP" autocomplete="postal-code"><input name="num" placeholder="Número"></div><input name="end" placeholder="Endereço" autocomplete="street-address"><div class="two"><input name="cid" placeholder="Cidade"><input name="uf" placeholder="UF" maxlength="2"></div><fieldset class="pgs"><legend class="mono">FORMA DE PAGAMENTO</legend>${[["todas","Escolher no Mercado Pago"],["pix","Pix"],["credito","Cartão de crédito (até 6x)"],["debito","Cartão de débito"],["mp","Conta Mercado Pago"]].map(([v,t])=>`<label><input type="radio" name="pg" value="${v}" ${v=="todas"?"checked":""}> ${t}</label>`).join("")}</fieldset><div class="msg mono" id="fe"></div><button class="btn">Pagar com Mercado Pago</button><button type="button" class="tb" id="bk">← Voltar à sacola</button></form>`}
 d.innerHTML=h}
 function open_(v){document.body.classList.toggle("open",v);$("#dr").setAttribute("aria-hidden",!v);if(v){if(step=="done"){step="cart";L=[];save()}drawer()}}
 
@@ -195,7 +196,7 @@ if(v.zap.replace(/\D/g,"").length<10)return er("INFORME O TELEFONE COM DDD.");
 if(v.cep.replace(/\D/g,"").length!=8)return er("CEP COM 8 NÚMEROS.");
 if(!v.end.trim()||!v.num.trim()||!v.cid.trim()||v.uf.trim().length!=2)return er("COMPLETE O ENDEREÇO, CIDADE E UF.");
 const no="MSH-"+Date.now().toString(36).toUpperCase();
-if(CONFIG.checkoutUrl){const q=new URLSearchParams({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,ref:no});const u=CONFIG.checkoutUrl+"?"+q;window.open(u,"_blank");note=`PEDIDO ${no} CRIADO. O MERCADO PAGO ABRIU EM OUTRA ABA. SE NÃO ABRIU, USE O LINK: ${u}`}
+if(CONFIG.checkoutUrl){const q=new URLSearchParams({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,pg:v.pg||"todas",ref:no});const u=CONFIG.checkoutUrl+"?"+q;window.open(u,"_blank");note=`PEDIDO ${no} CRIADO. O MERCADO PAGO ABRIU EM OUTRA ABA. SE NÃO ABRIU, USE O LINK: ${u}`}
 else note=`PEDIDO DE TESTE ${no} REGISTRADO. ISTO É UMA SIMULAÇÃO: NENHUMA COBRANÇA FOI FEITA E NENHUMA COMPRA FOI ENVIADA AO FORNECEDOR.`;
 step="done";drawer()}});
 document.addEventListener("keydown",e=>{if(e.key=="Escape")open_(false)});

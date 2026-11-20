@@ -8,7 +8,7 @@ Loja de moda alternativa: site estático (`public/`), funções serverless (`api
 - `public/index.html` — loja (home, catálogo, produto, sacola, checkout). Fotos em `public/images/`.
 - `data/products.json` — catálogo completo, incluindo custo e link da AliExpress. **Fica fora de `public/`**: nunca é servido diretamente.
 - `api/products.js` — entrega ao site só os campos públicos (sem custo, sem link do fornecedor).
-- `api/checkout.js` — confere preços e variantes no servidor e cria o pagamento no Mercado Pago.
+- `api/checkout.js` — confere preços e variantes no servidor e cria o pagamento no Mercado Pago. Formas: Pix, crédito (até 6x), débito, saldo Mercado Pago ou todas (parâmetro `pg`).
 - `tools/import-csv.mjs` — converte uma planilha CSV em `data/products.json`.
 - `.env.example` — nomes das variáveis (não commite valores reais).
 
