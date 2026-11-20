@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MOSHR – Wear your own identity.</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E8E5DF;--ink:#090909;--gr:#202020;--ag:#C4C4C4;--red:#8F1725;--rt:#8F1725;--ph1:#C4C4C4;--ph2:#d6d3cc;--line:#090909;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#090909;--ink:#E8E5DF;--ph1:#202020;--ph2:#161616;--line:#4a4a4a;--rt:#e0525f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#090909;--ink:#E8E5DF;--ph1:#202020;--ph2:#161616;--line:#4a4a4a;--rt:#e0525f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 Inter,system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+a{color:inherit}
+h1,h2,h3{margin:0;text-transform:uppercase;letter-spacing:-.02em;line-height:.95}
+.mono{font-family:"Space Mono",ui-monospace,monospace;font-size:.78rem;letter-spacing:.02em}
+button,select,input{font:inherit;color:inherit;border-radius:0}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--rt);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+.demo{background:var(--red);color:#fff;text-align:center;padding:6px 12px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:64px}
+.top .l{display:none}
+.logo{font:900 1.9rem Inter,sans-serif;letter-spacing:.12em;text-decoration:none}
+.top .r{display:flex;gap:18px;justify-content:flex-end}
+.tb{background:none;border:0;padding:6px 0;text-transform:uppercase;font-weight:700;font-size:.8rem;letter-spacing:.08em}
+nav{display:flex;gap:22px;overflow-x:auto;border-top:1px solid var(--line);padding:10px 20px;scrollbar-width:none}
+nav a{white-space:nowrap;text-decoration:none;text-transform:uppercase;font-size:.78rem;font-weight:500;letter-spacing:.08em}
+nav a:hover,nav a[aria-current]{color:var(--rt)}
+.hero{display:grid;grid-template-columns:1.5fr 1fr;border-bottom:1px solid var(--line)}
+.hero>div{padding:56px 20px 48px}
+.hero h1{font-size:clamp(3rem,10vw,8.4rem);font-weight:900;margin:18px 0 28px}
+.hero h1 span{color:var(--rt)}
+.blk{background:var(--ink);color:var(--bg);display:flex;flex-direction:column;justify-content:space-between;gap:40px}
+.blk p{margin:0}.blk .big{font:900 4rem/1 Inter;color:var(--ag)}
+.btn{display:inline-block;background:var(--ink);color:var(--bg);border:1px solid var(--ink);padding:14px 24px;text-decoration:none;text-transform:uppercase;font-weight:700;font-size:.85rem;letter-spacing:.08em}
+.btn:hover{background:var(--red);border-color:var(--red);color:#fff}
+.btn.o{background:transparent;color:var(--ink)}.btn.o:hover{color:#fff}
+.sec{padding:56px 0;border-bottom:1px solid var(--line)}
+.sh{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;gap:12px}
+.sh h2{font-size:clamp(1.8rem,4vw,3rem);font-weight:900}
+.cl a{display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;padding:18px 0;border-top:1px solid var(--line);text-decoration:none;text-transform:uppercase;font-weight:700;font-size:clamp(1.2rem,3vw,2rem)}
+.cl a:last-child{border-bottom:1px solid var(--line)}.cl a:hover{color:var(--rt);padding-left:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.card{border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-decoration:none;display:block}
+.ph{aspect-ratio:4/5;background:var(--ph1);position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:12px}
+.ph.b{background:var(--ph2)}
+.ph b{font:900 clamp(1.4rem,3vw,2.2rem)/1 Inter;opacity:.9}
+.ph .dot{position:absolute;right:12px;top:12px;width:10px;height:10px;background:var(--red)}
+.ph.im{padding:0;overflow:hidden}.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ci{padding:12px;display:grid;gap:6px}.ci h3{font-size:1.02rem;line-height:1.1}
+.red{color:var(--rt)}s{opacity:.55}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;align-items:center}
+.tools input,.tools select{background:transparent;border:1px solid var(--line);padding:9px 12px}
+.tools input{flex:1;min-width:160px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.chip{background:transparent;border:1px solid var(--line);padding:6px 12px;text-transform:uppercase;font-size:.75rem;font-weight:700;letter-spacing:.06em}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chip:disabled{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.pg{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;padding:40px 0 64px}
+.pg .ph{aspect-ratio:1/1.1;border:1px solid var(--line)}
+.pi{display:grid;gap:18px;align-content:start}
+.pi h1{font-size:clamp(2rem,4vw,3.2rem);font-weight:900}
+.lab{margin:0 0 8px;text-transform:uppercase;font-weight:700;font-size:.78rem;letter-spacing:.08em}
+.qty{display:inline-flex;border:1px solid var(--line)}.qty button{background:none;border:0;width:38px;height:38px}.qty span{width:38px;text-align:center;line-height:38px}
+.info{border-top:1px solid var(--line);padding-top:14px;font-size:.9rem;display:grid;gap:6px}
+.msg{min-height:1.4em;color:var(--rt)}
+.man{background:var(--ink);color:var(--bg);padding:64px 0}
+.man p{font-size:clamp(1.3rem,3vw,2.2rem);font-weight:500;max-width:30ch;line-height:1.15;margin:0 0 20px}
+.nl{display:flex;gap:0;max-width:480px}.nl input{flex:1;background:transparent;border:1px solid var(--line);padding:12px;min-width:0}
+footer{padding:36px 0 48px;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between}
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:none}
+.dr{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg);border-left:1px solid var(--line);z-index:41;transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column;padding:20px;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));overflow:auto}
+body.open .dr{transform:none}body.open .shade{display:block}
+.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.dh h2{font-size:1.5rem}
+.li{display:grid;grid-template-columns:56px 1fr auto;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+.li .ph{aspect-ratio:1;padding:4px}.li .ph b,.li .ph .mono,.li .ph .dot{display:none}
+.sum{border-top:1px solid var(--line);margin-top:auto;padding-top:12px;display:grid;gap:4px}.sum div{display:flex;justify-content:space-between}
+.f{display:grid;gap:8px}.f input{width:100%;padding:11px;background:transparent;border:1px solid var(--line)}
+.f .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:820px){.hero,.pg{grid-template-columns:1fr}.hero>div{padding:36px 20px}.top .l{display:none}}
+@media (prefers-reduced-motion:reduce){.dr{transition:none}}
+</style>
+</head>
+<body>
+<div class="demo mono" id="demo">AMBIENTE DE DEMONSTRAÇÃO · PRODUTOS E PREÇOS FICTÍCIOS · NENHUMA COBRANÇA REAL</div>
+<header>
+  <div class="wrap top"><span class="l mono">WEAR YOUR OWN IDENTITY.</span><a class="logo" href="#home" aria-label="MOSHR, página inicial">MOSHR</a>
+  <div class="r"><button class="tb" id="bs">Busca</button><button class="tb" id="bc">Sacola (<span id="n">0</span>)</button></div></div>
+  <nav id="nav"></nav>
+</header>
+<main id="app"></main>
+<div class="shade" id="shade"></div>
+<aside class="dr" id="dr" aria-label="Sacola" aria-hidden="true"></aside>
+
+<script>
+const CONFIG={checkoutUrl:"/api/checkout"}; // função serverless do Mercado Pago (mesmo domínio). Vazio = pedido de teste.
+const $=s=>document.querySelector(s),R=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const C={grunge:"Grunge",goth:"Goth",punk:"Punk",emo:"Emo / Scene",cyber:"Cyber / Y2K",street:"Alt Streetwear"};
+const T={r:["P","M","G","GG"],c:["38","40","42"],a:["Único"]};
+const P=[
+[1,"Camiseta Oversized Slash","grunge",89.9,0,"CAMISETA","r",["Preto","Cinza"]],
+[2,"Flanela Xadrez Desbotada","grunge",169.9,139.9,"FLANELA","r",["Vermelho","Preto"]],
+[3,"Moletom Zip Gasto","grunge",219.9,0,"MOLETOM","r",["Grafite","Preto"]],
+[4,"Camiseta Mourning Wash","goth",99.9,0,"CAMISETA","r",["Preto"]],
+[5,"Calça Flare Veludo","goth",189.9,159.9,"CALÇA","r",["Preto","Vinho"]],
+[6,"Coturno Plataforma","goth",329.9,0,"CALÇADO","c",["Preto"]],
+[7,"Jaqueta Bomber Patch","punk",279.9,0,"JAQUETA","r",["Preto","Verde"]],
+[8,"Calça Tartan Bondage","punk",199.9,0,"CALÇA","r",["Vermelho","Cinza"]],
+[9,"Cinto Spike","punk",79.9,0,"ACESSÓRIO","a",["Preto"]],
+[10,"Camiseta Listrada Scene","emo",94.9,0,"CAMISETA","r",["Preto","Rosa"]],
+[11,"Calça Skinny Rasgada","emo",179.9,0,"CALÇA","r",["Preto","Cinza"]],
+[12,"Pulseira Xadrez Dupla","emo",49.9,0,"ACESSÓRIO","a",["Preto"]],
+[13,"Top Mesh Cyber","cyber",109.9,0,"TOP","r",["Prata","Preto"]],
+[14,"Calça Cargo Chrome","cyber",229.9,0,"CALÇA","r",["Prata","Grafite"]],
+[15,"Moletom Heavy Boxy","street",249.9,209.9,"MOLETOM","r",["Preto","Off-white"]]
+].map(a=>({id:a[0],n:a[1],c:a[2],p:a[3],d:a[4],t:a[5],s:T[a[6]],k:a[7]}));
+const pr=p=>p.d||p.p,price=p=>p.d?`<s>${R(p.p)}</s> <b class="red">${R(p.d)}</b>`:R(p.p);
+const avail=(p,s,k)=>(p.id*31+s.charCodeAt(0)+k.charCodeAt(0))%6!==0; // disponibilidade fictícia
+const ph=p=>p.img?`<div class="ph im"><img src="${p.img}" alt="${p.n}" loading="lazy"></div>`:`<div class="ph ${p.id%2?"":"b"}"><span class="mono">MSH-${String(p.id).padStart(3,"0")}</span><b>${p.t}</b><i class="dot"></i></div>`;
+const card=p=>`<a class="card" href="#produto-${p.id}">${ph(p)}<div class="ci"><span class="mono">${C[p.c]}</span><h3>${p.n}</h3><span class="mono">${price(p)}</span></div></a>`;
+let L=[];try{L=JSON.parse(localStorage.getItem("moshr-cart")||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem("moshr-cart",JSON.stringify(L))}catch(e){}$("#n").textContent=L.reduce((a,i)=>a+i.q,0)};
+let LIVE=false;let F={cat:"todas",size:"",max:0,sort:"novo",q:""},sel={},step="cart",note="";
+
+function nav(h){$("#nav").innerHTML=[["home","Início"],["loja","Tudo"],...Object.entries(C).map(([k,v])=>["loja-"+k,v])].map(([k,v])=>`<a href="#${k}" ${h==k?"aria-current=page":""}>${v}</a>`).join("")}
+function home(){return `<section class="hero"><div><span class="mono">COLEÇÃO 01 / DEMO</span><h1>Wear your<br>own<br><span>identity.</span></h1><a class="btn" href="#loja">Ver coleção →</a></div>
+<div class="blk"><p class="mono">MOSHR — MODA ALTERNATIVA INDEPENDENTE. GRUNGE, GOTH, PUNK, EMO, CYBER E STREETWEAR.</p><p class="big">${P.length}<br>PEÇAS</p><p class="mono">ENVIO PARA TODO O BRASIL · PIX E CARTÃO</p></div></section>
+<section class="sec"><div class="wrap"><div class="sh"><h2>Subculturas</h2></div><div class="cl">${Object.entries(C).map(([k,v],i)=>`<a href="#loja-${k}"><span class="mono">0${i+1}</span><span>${v}</span><span>→</span></a>`).join("")}</div></div></section>
+<section class="sec"><div class="wrap"><div class="sh"><h2>Novidades</h2><a class="mono" href="#loja">VER TUDO →</a></div><div class="grid">${P.slice(-4).reverse().map(card).join("")}</div></div></section>
+<section class="man"><div class="wrap"><span class="mono">MANIFESTO</span><p style="margin-top:14px">Não seguimos tendência. Vestimos quem prefere o barulho.</p><a class="btn o" style="color:var(--bg);border-color:var(--bg)" href="#loja">Entrar →</a></div></section>
+<section class="sec"><div class="wrap"><div class="sh"><h2>Newsletter</h2></div><form class="nl" id="nl"><input type="email" required placeholder="SEU E-MAIL" aria-label="E-mail"><button class="btn">Entrar</button></form><p class="mono msg" id="nlm"></p></div></section>`}
+function loja(){const sizes=[...new Set(P.flatMap(p=>p.s))];return `<div class="wrap" style="padding-top:36px;padding-bottom:64px"><div class="sh"><h2>${F.cat=="todas"?"Todos os produtos":C[F.cat]}</h2><span class="mono" id="cnt"></span></div>
+<div class="chips">${["todas",...Object.keys(C)].map(k=>`<button class="chip" data-cat="${k}" aria-pressed="${F.cat==k}">${k=="todas"?"Todas":C[k]}</button>`).join("")}</div>
+<div class="tools"><input id="q" type="search" placeholder="BUSCAR PRODUTO" value="${F.q.replace(/"/g,"")}" aria-label="Buscar"><select id="sz" aria-label="Tamanho"><option value="">Tamanho: todos</option>${sizes.map(s=>`<option ${F.size==s?"selected":""}>${s}</option>`).join("")}</select>
+<select id="mx" aria-label="Preço"><option value="0">Preço: todos</option><option value="100" ${F.max==100?"selected":""}>até R$ 100</option><option value="200" ${F.max==200?"selected":""}>até R$ 200</option><option value="300" ${F.max==300?"selected":""}>até R$ 300</option></select>
+<select id="so" aria-label="Ordenar"><option value="novo">Novidades</option><option value="pop" ${F.sort=="pop"?"selected":""}>Popularidade</option><option value="asc" ${F.sort=="asc"?"selected":""}>Menor preço</option><option value="desc" ${F.sort=="desc"?"selected":""}>Maior preço</option></select></div>
+<div id="res"></div></div>`}
+function list(){let r=P.filter(p=>(F.cat=="todas"||p.c==F.cat)&&(!F.size||p.s.includes(F.size))&&(!F.max||pr(p)<=F.max)&&(p.n+C[p.c]).toLowerCase().includes(F.q.toLowerCase()));
+const o={novo:(a,b)=>b.id-a.id,pop:(a,b)=>(a.id*7%15)-(b.id*7%15),asc:(a,b)=>pr(a)-pr(b),desc:(a,b)=>pr(b)-pr(a)};r.sort(o[F.sort]);
+$("#cnt").textContent=r.length+" ITENS";$("#res").innerHTML=r.length?`<div class="grid">${r.map(card).join("")}</div>`:`<p class="mono" style="padding:48px 0">NENHUM PRODUTO ENCONTRADO. LIMPE OS FILTROS.</p>`}
+function prod(id){const p=P.find(x=>x.id==id);if(!p)return `<div class="wrap" style="padding:64px 20px"><h2>Produto não encontrado</h2><p><a href="#loja">Voltar à coleção</a></p></div>`;
+if(sel.id!=id)sel={id:+id,s:"",k:p.k[0],q:1};
+const rel=P.filter(x=>x.c==p.c&&x.id!=p.id).concat(P.filter(x=>x.c!=p.c)).slice(0,4);
+return `<div class="wrap"><div class="pg">${ph(p)}<div class="pi"><span class="mono">${C[p.c]} · MSH-${String(p.id).padStart(3,"0")}</span><h1>${p.n}</h1><div class="mono" style="font-size:1.05rem">${price(p)}</div>
+<p style="margin:0">${p.desc||"Peça de demonstração da coleção 01. Descrição fictícia para teste de layout."}</p>
+<div><p class="lab">Cor: ${sel.k}</p><div class="chips" style="margin:0">${p.k.map(k=>`<button class="chip" data-k="${k}" aria-pressed="${sel.k==k}">${k}</button>`).join("")}</div></div>
+<div><p class="lab">Tamanho</p><div class="chips" style="margin:0">${p.s.map(s=>`<button class="chip" data-s="${s}" aria-pressed="${sel.s==s}" ${avail(p,s,sel.k)?"":"disabled"}>${s}</button>`).join("")}</div></div>
+<div><p class="lab">Quantidade</p><div class="qty"><button data-d="-1" aria-label="Diminuir">−</button><span>${sel.q}</span><button data-d="1" aria-label="Aumentar">+</button></div></div>
+<button class="btn" id="add">Adicionar à sacola</button><div class="msg mono" id="pm"></div>
+<div class="info mono"><span>MEDIDAS: ${LIVE?(p.med||"SOB CONSULTA"):"P 50×68 cm · M 52×70 · G 55×72 · GG 58×74 (demo)"}</span><span>ENTREGA: 10 A 20 DIAS ÚTEIS COM RASTREIO</span><span>FRETE R$ 24,90 · GRÁTIS ACIMA DE R$ 250</span><span>TROCA EM ATÉ 7 DIAS APÓS O RECEBIMENTO</span></div></div></div>
+<div class="sh"><h2 style="font-size:1.6rem">Veja também</h2></div><div class="grid" style="margin-bottom:64px">${rel.map(card).join("")}</div></div>`}
+function route(){const h=location.hash.slice(1)||"home";nav(h.startsWith("produto")?"loja":h);const a=$("#app");
+if(h.startsWith("produto-"))a.innerHTML=prod(h.slice(8));
+else if(h.startsWith("loja")){F.cat=h.slice(5)||"todas";if(!C[F.cat])F.cat="todas";a.innerHTML=loja();list()}
+else a.innerHTML=home()+foot();
+if(!a.innerHTML.includes("<footer"))a.innerHTML+=foot();scrollTo(0,0)}
+const foot=()=>`<footer class="wrap mono"><span>© MOSHR — WEAR YOUR OWN IDENTITY.</span><span>CNPJ 00.000.000/0001-00 · contato@moshr.com.br</span><span>${LIVE?"":"DEMO · NÃO É UMA OFERTA REAL"}</span></footer>`;
+
+const tot=()=>{const s=L.reduce((a,i)=>a+pr(P.find(p=>p.id==i.id))*i.q,0);const f=!s||s>=250?0:24.9;return{s,f,t:s+f}};
+function drawer(){const d=$("#dr"),x=tot();let h=`<div class="dh"><h2>${step=="co"?"Finalizar":"Sacola"}</h2><button class="tb" id="cl" aria-label="Fechar">Fechar ×</button></div>`;
+if(step=="done")h+=`<p class="mono">${note}</p>`;
+else if(!L.length)h+=`<p class="mono">SUA SACOLA ESTÁ VAZIA.</p><a class="btn" href="#loja" id="go">Ver coleção</a>`;
+else{h+=L.map((i,k)=>{const p=P.find(z=>z.id==i.id);return `<div class="li">${ph(p)}<div><b>${p.n}</b><br><span class="mono">${i.k} · ${i.s} · ${R(pr(p))}</span></div><div class="qty"><button data-q="${k}" data-d="-1" aria-label="Diminuir">−</button><span>${i.q}</span><button data-q="${k}" data-d="1" aria-label="Aumentar">+</button></div></div>`}).join("");
+h+=`<div class="sum mono"><div><span>SUBTOTAL</span><span>${R(x.s)}</span></div><div><span>FRETE (10–20 DIAS ÚTEIS)</span><span>${x.f?R(x.f):"GRÁTIS"}</span></div><div style="font-size:1rem"><b>TOTAL</b><b>${R(x.t)}</b></div></div>`;
+if(step=="cart")h+=`<button class="btn" id="co" style="margin-top:14px">Finalizar pedido</button>`;
+else h+=`<form class="f" id="ff" style="margin-top:14px" novalidate><input name="nome" placeholder="Nome completo" autocomplete="name"><input name="email" type="email" placeholder="E-mail" autocomplete="email"><input name="zap" placeholder="Telefone com DDD" autocomplete="tel"><div class="two"><input name="cep" placeholder="CEP" autocomplete="postal-code"><input name="num" placeholder="Número"></div><input name="end" placeholder="Endereço" autocomplete="street-address"><div class="two"><input name="cid" placeholder="Cidade"><input name="uf" placeholder="UF" maxlength="2"></div><div class="msg mono" id="fe"></div><button class="btn">Pagar com Mercado Pago</button><button type="button" class="tb" id="bk">← Voltar à sacola</button></form>`}
+d.innerHTML=h}
+function open_(v){document.body.classList.toggle("open",v);$("#dr").setAttribute("aria-hidden",!v);if(v){if(step=="done"){step="cart";L=[];save()}drawer()}}
+
+document.addEventListener("click",e=>{const t=e.target.closest("button,a");if(!t)return;const D=t.dataset;
+if(D.cat){F.cat=D.cat;location.hash=D.cat=="todas"?"loja":"loja-"+D.cat}
+else if(D.k){sel.k=D.k;sel.s="";$("#app").innerHTML=prod(sel.id)}
+else if(D.s){sel.s=D.s;$("#app").innerHTML=prod(sel.id)}
+else if(D.q){const i=L[+D.q];i.q+=+D.d;if(i.q<1)L.splice(+D.q,1);if(i.q>10)i.q=10;save();drawer()}
+else if(D.d){sel.q=Math.min(10,Math.max(1,sel.q+ +D.d));$("#app").innerHTML=prod(sel.id)}
+else if(t.id=="add"){if(!sel.s)return $("#pm").textContent="ESCOLHA UM TAMANHO.";const f=L.find(i=>i.id==sel.id&&i.s==sel.s&&i.k==sel.k);f?f.q=Math.min(10,f.q+sel.q):L.push({id:sel.id,s:sel.s,k:sel.k,q:sel.q});save();step="cart";open_(true)}
+else if(t.id=="bc")open_(true);
+else if(t.id=="bs"){location.hash="loja";setTimeout(()=>$("#q")&&$("#q").focus(),50)}
+else if(t.id=="cl"||t.id=="shade"||t.id=="go")open_(false);
+else if(t.id=="co"){step="co";drawer()}
+else if(t.id=="bk"){step="cart";drawer()}});
+document.addEventListener("input",e=>{if(e.target.id=="q"){F.q=e.target.value;list()}});
+document.addEventListener("change",e=>{const i=e.target.id;if(i=="sz")F.size=e.target.value;else if(i=="mx")F.max=+e.target.value;else if(i=="so")F.sort=e.target.value;else return;list()});
+document.addEventListener("submit",e=>{e.preventDefault();
+if(e.target.id=="nl")return $("#nlm").textContent="CADASTRO DE TESTE REGISTRADO (DEMONSTRAÇÃO).";
+if(e.target.id=="ff"){const v=Object.fromEntries(new FormData(e.target)),er=m=>$("#fe").textContent=m;
+if((v.nome||"").trim().length<3)return er("INFORME O NOME COMPLETO.");
+if(!/^\S+@\S+\.\S+$/.test(v.email))return er("INFORME UM E-MAIL VÁLIDO.");
+if(v.zap.replace(/\D/g,"").length<10)return er("INFORME O TELEFONE COM DDD.");
+if(v.cep.replace(/\D/g,"").length!=8)return er("CEP COM 8 NÚMEROS.");
+if(!v.end.trim()||!v.num.trim()||!v.cid.trim()||v.uf.trim().length!=2)return er("COMPLETE O ENDEREÇO, CIDADE E UF.");
+const no="MSH-"+Date.now().toString(36).toUpperCase();
+if(CONFIG.checkoutUrl){const q=new URLSearchParams({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,ref:no});const u=CONFIG.checkoutUrl+"?"+q;window.open(u,"_blank");note=`PEDIDO ${no} CRIADO. O MERCADO PAGO ABRIU EM OUTRA ABA. SE NÃO ABRIU, USE O LINK: ${u}`}
+else note=`PEDIDO DE TESTE ${no} REGISTRADO. ISTO É UMA SIMULAÇÃO: NENHUMA COBRANÇA FOI FEITA E NENHUMA COMPRA FOI ENVIADA AO FORNECEDOR.`;
+step="done";drawer()}});
+document.addEventListener("keydown",e=>{if(e.key=="Escape")open_(false)});
+addEventListener("hashchange",route);save();
+fetch("/api/products").then(r=>r.ok?r.json():Promise.reject()).then(a=>{if(Array.isArray(a)&&a.length){P.length=0;P.push(...a);LIVE=!a.some(p=>p.demo);if(LIVE){const d=$("#demo");d&&d.remove()}}}).catch(()=>{}).finally(()=>{L=L.filter(i=>P.some(p=>p.id==i.id));save();route()});
+</script>
+</body>
+</html>
