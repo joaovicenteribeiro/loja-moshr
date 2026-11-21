@@ -12,6 +12,9 @@ Loja de moda alternativa: site estático (`public/`), funções serverless (`api
 - `tools/import-csv.mjs` — converte uma planilha CSV em `data/products.json`.
 - `.env.example` — nomes das variáveis (não commite valores reais).
 
+## Tipos de peça e estilos
+Cada produto tem um **estilo** (coluna `categoria`: grunge, goth, punk, emo, cyber, street) e um **tipo de peça** (coluna `tipo`): `camisas`, `camisetas`, `casacos` (jaquetas/moletons), `calcas`, `calcados` ou `acessorios`. O importador também aceita nomes comuns (jaqueta, moletom, calça, tênis, cinto…) e converte; se não reconhecer, avisa o erro. No site, o cliente filtra por tipo, por estilo ou pelos dois juntos. Tipos sem produtos não aparecem no menu.
+
 ## Colocar os produtos da AliExpress
 1. Escolha o produto na AliExpress (ou no DSers) e anote: link, custo, tamanhos e cores disponíveis.
 2. Preencha `data/modelo-produtos.csv` (uma linha por produto; tamanhos e cores separados por `|`).

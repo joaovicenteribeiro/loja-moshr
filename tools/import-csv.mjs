@@ -1,7 +1,9 @@
 // Uso: node tools/import-csv.mjs meus-produtos.csv   (gera data/products.json)
+// tipo = tipo da peça: camisas | camisetas | casacos (jaquetas/moletons) | calcas | calcados | acessorios
 // Colunas: nome;categoria;tipo;preco;promo;custo;tamanhos;cores;imagem;descricao;medidas;aliexpress
 // Tamanhos e cores separados por "|". Aceita separador ; ou , e decimal com vírgula.
 import fs from "node:fs";
+import { normTipo } from "../api/_catalog.js";
 const CATS = ["grunge", "goth", "punk", "emo", "cyber", "street"];
 const [, , input, output = "data/products.json"] = process.argv;
 if (!input) { console.error("Uso: node tools/import-csv.mjs arquivo.csv"); process.exit(1); }
@@ -37,6 +39,8 @@ rows.forEach((row, i) => {
   }
   [imagem, ...Object.values(imagens)].filter(Boolean).forEach((f) => { if (!fs.existsSync("public/" + f)) warns.push(`Linha ${n} (${nome}): arquivo public/${f} não encontrado.`); });
   if (!nome) e("nome vazio");
+  const tipo = normTipo(g("tipo"));
+  if (!tipo) e("tipo deve ser: camisas, camisetas, casacos (jaquetas/moletons), calcas, calcados ou acessorios");
   if (!CATS.includes(g("categoria"))) e(`categoria deve ser uma de: ${CATS.join(", ")}`);
   if (!(preco > 0)) e("preco inválido");
   if (promo && promo >= preco) e("promo deve ser menor que o preco");
@@ -45,7 +49,7 @@ rows.forEach((row, i) => {
   const venda = promo || preco;
   if (!custo) warns.push(`Linha ${n} (${nome}): sem custo informado, margem não calculada.`);
   else if ((venda - custo) / venda < 0.3) warns.push(`Linha ${n} (${nome}): margem de ${(((venda - custo) / venda) * 100).toFixed(0)}% antes de taxas e frete. Confira se compensa.`);
-  out.push({ id: i + 1, nome, categoria: g("categoria"), tipo: g("tipo") || "peça", preco, promo, custo,
+  out.push({ id: i + 1, nome, categoria: g("categoria"), tipo, preco, promo, custo,
     tamanhos: tam, cores: cor, imagem, imagens, descricao: g("descricao"), medidas: g("medidas"), aliexpress: ali, ativo: true });
 });
 if (errs.length) { console.error("Corrija antes de importar:\n- " + errs.join("\n- ")); process.exit(1); }

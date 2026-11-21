@@ -104,6 +104,10 @@ const CONFIG={checkoutUrl:"/api/checkout"}; // função serverless do Mercado Pa
 const $=s=>document.querySelector(s),R=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const C={grunge:"Grunge",goth:"Goth",punk:"Punk",emo:"Emo / Scene",cyber:"Cyber / Y2K",street:"Alt Streetwear"};
 const T={r:["P","M","G","GG"],c:["38","40","42"],a:["Único"]};
+const G={CAMISETA:"camisetas",FLANELA:"camisas",MOLETOM:"casacos",JAQUETA:"casacos","CALÇA":"calcas","CALÇADO":"calcados","ACESSÓRIO":"acessorios",TOP:"camisetas"};
+const TL={camisas:"Camisas",camisetas:"Camisetas",casacos:"Jaquetas / Moletons",calcas:"Calças",calcados:"Calçados",acessorios:"Acessórios"};
+const tiposAtivos=()=>Object.keys(TL).filter(k=>P.some(p=>p.g==k));
+const ttl=()=>[F.tipo!="todos"?TL[F.tipo]:"",F.cat!="todas"?C[F.cat]:""].filter(Boolean).join(" · ")||"Todos os produtos";
 const P=[
 [1,"Camiseta Oversized Slash","grunge",89.9,0,"CAMISETA","r",["Preto","Cinza"]],
 [2,"Flanela Xadrez Desbotada","grunge",169.9,139.9,"FLANELA","r",["Vermelho","Preto"]],
@@ -120,35 +124,38 @@ const P=[
 [13,"Top Mesh Cyber","cyber",109.9,0,"TOP","r",["Prata","Preto"]],
 [14,"Calça Cargo Chrome","cyber",229.9,0,"CALÇA","r",["Prata","Grafite"]],
 [15,"Moletom Heavy Boxy","street",249.9,209.9,"MOLETOM","r",["Preto","Off-white"]]
-].map(a=>({id:a[0],n:a[1],c:a[2],p:a[3],d:a[4],t:a[5],s:T[a[6]],k:a[7]}));
+].map(a=>({id:a[0],n:a[1],c:a[2],p:a[3],d:a[4],t:a[5],g:G[a[5]],s:T[a[6]],k:a[7]}));
 const pr=p=>p.d||p.p,price=p=>p.d?`<s>${R(p.p)}</s> <b class="red">${R(p.d)}</b>`:R(p.p);
 const avail=(p,s,k)=>(p.id*31+s.charCodeAt(0)+k.charCodeAt(0))%6!==0; // disponibilidade fictícia
 const ph=p=>p.img?`<div class="ph im"><img src="${p.img}" alt="${p.n}" loading="lazy" onerror="this.remove()"></div>`:`<div class="ph ${p.id%2?"":"b"}"><span class="mono">MSH-${String(p.id).padStart(3,"0")}</span><b>${p.t}</b><i class="dot"></i></div>`;
 const card=p=>`<a class="card" href="#produto-${p.id}">${ph(p)}<div class="ci"><span class="mono">${C[p.c]}</span><h3>${p.n}</h3><span class="mono">${price(p)}</span></div></a>`;
 let L=[];try{L=JSON.parse(localStorage.getItem("moshr-cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("moshr-cart",JSON.stringify(L))}catch(e){}$("#n").textContent=L.reduce((a,i)=>a+i.q,0)};
-let LIVE=false;let F={cat:"todas",size:"",max:0,sort:"novo",q:""},sel={},step="cart",note="";
+let LIVE=false;let F={cat:"todas",tipo:"todos",size:"",max:0,sort:"novo",q:""},sel={},step="cart",note="";
 
-function nav(h){$("#nav").innerHTML=[["home","Início"],["loja","Tudo"],...Object.entries(C).map(([k,v])=>["loja-"+k,v])].map(([k,v])=>`<a href="#${k}" ${h==k?"aria-current=page":""}>${v}</a>`).join("")}
+function nav(h){const a=(k,v)=>`<a href="#${k}" ${h==k?"aria-current=page":""}>${v}</a>`,s=t=>`<span class="mono" style="opacity:.5">${t}</span>`;
+$("#nav").innerHTML=a("home","Início")+a("loja","Tudo")+s("PEÇAS")+tiposAtivos().map(k=>a("tipo-"+k,TL[k])).join("")+s("ESTILOS")+Object.entries(C).map(([k,v])=>a("loja-"+k,v)).join("")}
 function home(){return `<section class="hero"><div><span class="mono">COLEÇÃO 01 / DEMO</span><h1>Wear your<br>own<br><span>identity.</span></h1><a class="btn" href="#loja">Ver coleção →</a></div>
 <div class="blk"><p class="mono">MOSHR — MODA ALTERNATIVA INDEPENDENTE. GRUNGE, GOTH, PUNK, EMO, CYBER E STREETWEAR.</p><p class="big">${P.length}<br>${P.length==1?"PEÇA":"PEÇAS"}</p><p class="mono">ENVIO PARA TODO O BRASIL · PIX E CARTÃO</p></div></section>
+<section class="sec"><div class="wrap"><div class="sh"><h2>Peças</h2></div><div class="cl">${tiposAtivos().map((k,i)=>`<a href="#tipo-${k}"><span class="mono">0${i+1}</span><span>${TL[k]}</span><span>→</span></a>`).join("")}</div></div></section>
 <section class="sec"><div class="wrap"><div class="sh"><h2>Subculturas</h2></div><div class="cl">${Object.entries(C).map(([k,v],i)=>`<a href="#loja-${k}"><span class="mono">0${i+1}</span><span>${v}</span><span>→</span></a>`).join("")}</div></div></section>
 <section class="sec"><div class="wrap"><div class="sh"><h2>Novidades</h2><a class="mono" href="#loja">VER TUDO →</a></div><div class="grid">${P.slice(-4).reverse().map(card).join("")}</div></div></section>
 <section class="man"><div class="wrap"><span class="mono">MANIFESTO</span><p style="margin-top:14px">Não seguimos tendência. Vestimos quem prefere o barulho.</p><a class="btn o" style="color:var(--bg);border-color:var(--bg)" href="#loja">Entrar →</a></div></section>
 <section class="sec"><div class="wrap"><div class="sh"><h2>Newsletter</h2></div><form class="nl" id="nl"><input type="email" required placeholder="SEU E-MAIL" aria-label="E-mail"><button class="btn">Entrar</button></form><p class="mono msg" id="nlm"></p></div></section>`}
-function loja(){const sizes=[...new Set(P.flatMap(p=>p.s))];return `<div class="wrap" style="padding-top:36px;padding-bottom:64px"><div class="sh"><h2>${F.cat=="todas"?"Todos os produtos":C[F.cat]}</h2><span class="mono" id="cnt"></span></div>
-<div class="chips">${["todas",...Object.keys(C)].map(k=>`<button class="chip" data-cat="${k}" aria-pressed="${F.cat==k}">${k=="todas"?"Todas":C[k]}</button>`).join("")}</div>
+function loja(){const sizes=[...new Set(P.flatMap(p=>p.s))];return `<div class="wrap" style="padding-top:36px;padding-bottom:64px"><div class="sh"><h2>${ttl()}</h2><span class="mono" id="cnt"></span></div>
+<p class="mono" style="margin:0 0 6px">TIPO DE PEÇA</p><div class="chips">${["todos",...Object.keys(TL)].map(k=>`<button class="chip" data-tipo="${k}" aria-pressed="${F.tipo==k}" ${k=="todos"||P.some(p=>p.g==k)?"":"disabled"}>${k=="todos"?"Todos":TL[k]}</button>`).join("")}</div>
+<p class="mono" style="margin:0 0 6px">ESTILO</p><div class="chips">${["todas",...Object.keys(C)].map(k=>`<button class="chip" data-cat="${k}" aria-pressed="${F.cat==k}">${k=="todas"?"Todas":C[k]}</button>`).join("")}</div>
 <div class="tools"><input id="q" type="search" placeholder="BUSCAR PRODUTO" value="${F.q.replace(/"/g,"")}" aria-label="Buscar"><select id="sz" aria-label="Tamanho"><option value="">Tamanho: todos</option>${sizes.map(s=>`<option ${F.size==s?"selected":""}>${s}</option>`).join("")}</select>
 <select id="mx" aria-label="Preço"><option value="0">Preço: todos</option><option value="100" ${F.max==100?"selected":""}>até R$ 100</option><option value="200" ${F.max==200?"selected":""}>até R$ 200</option><option value="300" ${F.max==300?"selected":""}>até R$ 300</option></select>
 <select id="so" aria-label="Ordenar"><option value="novo">Novidades</option><option value="pop" ${F.sort=="pop"?"selected":""}>Popularidade</option><option value="asc" ${F.sort=="asc"?"selected":""}>Menor preço</option><option value="desc" ${F.sort=="desc"?"selected":""}>Maior preço</option></select></div>
 <div id="res"></div></div>`}
-function list(){let r=P.filter(p=>(F.cat=="todas"||p.c==F.cat)&&(!F.size||p.s.includes(F.size))&&(!F.max||pr(p)<=F.max)&&(p.n+C[p.c]).toLowerCase().includes(F.q.toLowerCase()));
+function list(){let r=P.filter(p=>(F.cat=="todas"||p.c==F.cat)&&(F.tipo=="todos"||p.g==F.tipo)&&(!F.size||p.s.includes(F.size))&&(!F.max||pr(p)<=F.max)&&(p.n+C[p.c]).toLowerCase().includes(F.q.toLowerCase()));
 const o={novo:(a,b)=>b.id-a.id,pop:(a,b)=>(a.id*7%15)-(b.id*7%15),asc:(a,b)=>pr(a)-pr(b),desc:(a,b)=>pr(b)-pr(a)};r.sort(o[F.sort]);
 $("#cnt").textContent=r.length+" ITENS";$("#res").innerHTML=r.length?`<div class="grid">${r.map(card).join("")}</div>`:`<p class="mono" style="padding:48px 0">NENHUM PRODUTO ENCONTRADO. LIMPE OS FILTROS.</p>`}
 function prod(id){const p=P.find(x=>x.id==id);if(!p)return `<div class="wrap" style="padding:64px 20px"><h2>Produto não encontrado</h2><p><a href="#loja">Voltar à coleção</a></p></div>`;
 if(sel.id!=id)sel={id:+id,s:"",k:p.k[0],q:1};
 const rel=P.filter(x=>x.c==p.c&&x.id!=p.id).concat(P.filter(x=>x.c!=p.c)).slice(0,4);
-return `<div class="wrap"><div class="pg">${ph(p.imgs&&p.imgs[sel.k]?{...p,img:p.imgs[sel.k]}:p)}<div class="pi"><span class="mono">${C[p.c]} · MSH-${String(p.id).padStart(3,"0")}</span><h1>${p.n}</h1><div class="mono" style="font-size:1.05rem">${price(p)}</div>
+return `<div class="wrap"><div class="pg">${ph(p.imgs&&p.imgs[sel.k]?{...p,img:p.imgs[sel.k]}:p)}<div class="pi"><span class="mono">${TL[p.g]?TL[p.g]+" · ":""}${C[p.c]} · MSH-${String(p.id).padStart(3,"0")}</span><h1>${p.n}</h1><div class="mono" style="font-size:1.05rem">${price(p)}</div>
 <p style="margin:0">${p.desc||"Peça de demonstração da coleção 01. Descrição fictícia para teste de layout."}</p>
 <div><p class="lab">Cor: ${sel.k}</p><div class="chips" style="margin:0">${p.k.map(k=>`<button class="chip" data-k="${k}" aria-pressed="${sel.k==k}">${k}</button>`).join("")}</div></div>
 <div><p class="lab">Tamanho</p><div class="chips" style="margin:0">${p.s.map(s=>`<button class="chip" data-s="${s}" aria-pressed="${sel.s==s}" ${avail(p,s,sel.k)?"":"disabled"}>${s}</button>`).join("")}</div></div>
@@ -158,7 +165,8 @@ return `<div class="wrap"><div class="pg">${ph(p.imgs&&p.imgs[sel.k]?{...p,img:p
 <div class="sh"><h2 style="font-size:1.6rem">Veja também</h2></div><div class="grid" style="margin-bottom:64px">${rel.map(card).join("")}</div></div>`}
 function route(){const h=location.hash.slice(1)||"home";nav(h.startsWith("produto")?"loja":h);const a=$("#app");
 if(h.startsWith("produto-"))a.innerHTML=prod(h.slice(8));
-else if(h.startsWith("loja")){F.cat=h.slice(5)||"todas";if(!C[F.cat])F.cat="todas";a.innerHTML=loja();list()}
+else if(h.startsWith("tipo-")){F.tipo=TL[h.slice(5)]?h.slice(5):"todos";F.cat="todas";a.innerHTML=loja();list()}
+else if(h.startsWith("loja")){F.cat=h.slice(5)||"todas";if(!C[F.cat])F.cat="todas";F.tipo="todos";a.innerHTML=loja();list()}
 else a.innerHTML=home()+foot();
 if(!a.innerHTML.includes("<footer"))a.innerHTML+=foot();scrollTo(0,0)}
 const foot=()=>`<footer class="wrap mono"><span>© MOSHR — WEAR YOUR OWN IDENTITY.</span><span>CNPJ 00.000.000/0001-00 · contato@moshr.com.br</span><span>${LIVE?"":"DEMO · NÃO É UMA OFERTA REAL"}</span></footer>`;
@@ -182,7 +190,8 @@ d.innerHTML=h}
 function open_(v){document.body.classList.toggle("open",v);$("#dr").setAttribute("aria-hidden",!v);if(v){if(step=="done"){step="cart";L=[];save()}drawer()}}
 
 document.addEventListener("click",e=>{const t=e.target.closest("button,a");if(!t)return;const D=t.dataset;
-if(D.cat){F.cat=D.cat;location.hash=D.cat=="todas"?"loja":"loja-"+D.cat}
+if(D.cat){F.cat=D.cat;$("#app").innerHTML=loja();list()}
+else if(D.tipo){F.tipo=D.tipo;$("#app").innerHTML=loja();list()}
 else if(D.k){sel.k=D.k;sel.s="";$("#app").innerHTML=prod(sel.id)}
 else if(D.s){sel.s=D.s;$("#app").innerHTML=prod(sel.id)}
 else if(D.q){const i=L[+D.q];i.q+=+D.d;if(i.q<1)L.splice(+D.q,1);if(i.q>10)i.q=10;save();drawer()}
