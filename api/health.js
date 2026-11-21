@@ -6,6 +6,7 @@ export default async function handler(req, res) {
     SITE_URL: !!process.env.SITE_URL,
     MP_WEBHOOK_SECRET: !!process.env.MP_WEBHOOK_SECRET,
     mercado_pago_api: "não testado",
+    versao: "checkout-3",
   };
   if (token) {
     try {

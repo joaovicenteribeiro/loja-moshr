@@ -8,11 +8,12 @@ const priceOf = (p) => p.promo || p.preco;
 
 // Formas de pagamento oferecidas no Checkout Pro. Boleto e lotérica ficam sempre de fora.
 // pg: pix | credito | debito | mp (saldo da conta Mercado Pago) | todas (padrão)
-const ALL_TYPES = ["credit_card", "debit_card", "bank_transfer", "account_money", "prepaid_card", "ticket", "atm"];
+// ATENÇÃO: "account_money" (dinheiro em conta) NÃO pode ser excluído pelo Mercado Pago; enviar isso causa erro na criação.
+const ALL_TYPES = ["credit_card", "debit_card", "bank_transfer", "ticket"];
 const ALLOW = {
   pix: ["bank_transfer"], credito: ["credit_card"], debito: ["debit_card"], mp: ["account_money"],
 };
-const DEFAULT_ALLOW = ["credit_card", "debit_card", "bank_transfer", "account_money", "prepaid_card"];
+const DEFAULT_ALLOW = ["credit_card", "debit_card", "bank_transfer"];
 const methodsFor = (pg) => ({
   excluded_payment_types: ALL_TYPES.filter((t) => !(ALLOW[pg] || DEFAULT_ALLOW).includes(t)).map((id) => ({ id })),
   installments: 6,
@@ -31,7 +32,9 @@ export default async function handler(req, res) {
     if (!lines.length) return res.status(400).send("Carrinho vazio");
 
     const subtotal = lines.reduce((a, l) => a + priceOf(l.p) * l.qty, 0);
-    const site = process.env.SITE_URL;
+    // Normaliza SITE_URL: o Mercado Pago rejeita back_urls inválidas (sem https:// ou com espaço).
+    let site = String(process.env.SITE_URL || "").trim().replace(/\/+$/, "");
+    if (site && !/^https:\/\//.test(site)) site = /^http:\/\//.test(site) ? "" : "https://" + site;
     const preference = {
       items: lines.map((l) => ({ id: String(l.id), title: `${l.p.nome} (${l.size} / ${l.color})`,
         quantity: l.qty, currency_id: "BRL", unit_price: +priceOf(l.p).toFixed(2) })),
@@ -55,7 +58,8 @@ export default async function handler(req, res) {
       body: JSON.stringify(preference),
     });
     const data = await r.json();
-    if (!r.ok || !data.init_point) { console.error("Mercado Pago recusou a preferência:", r.status, JSON.stringify(data)); return res.status(502).send("Erro ao criar o pagamento"); }
+    if (!r.ok || !data.init_point) { console.error("Mercado Pago recusou a preferência:", r.status, JSON.stringify(data)); if (process.env.DEBUG_CHECKOUT === "1") return res.status(200).json({ mp_status: r.status, mp: data }); // só para diagnóstico (200 para o navegador mostrar o texto)
+      return res.status(502).send("Erro ao criar o pagamento"); }
     res.redirect(302, data.init_point);
   } catch (e) {
     res.status(500).send("Erro interno");
