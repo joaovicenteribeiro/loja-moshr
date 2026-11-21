@@ -36,6 +36,13 @@ Não há importação automática por link: a AliExpress só oferece API a parce
 6. **Conferir:** na Vercel, abra Logs da função `api/webhook`. Aparece uma linha `PAGAMENTO` com status, valor, pedido e o link da AliExpress de cada item. Só `"status":"approved"` significa pago.
 7. **Erro 502 no checkout:** veja os Logs de `api/checkout`; o motivo enviado pelo Mercado Pago aparece em "Mercado Pago recusou a preferência".
 
+## Pix com QR Code no próprio site
+- Ao escolher **Pix** na sacola, o site chama `api/pix.js`, que cria o pagamento (Checkout Transparente, Orders API) e devolve o QR Code e o "copia e cola". O cliente paga no app de qualquer banco.
+- `api/pix-status.js` é consultado a cada 4 s; só o Mercado Pago decide se está pago (`processed` + `accredited`).
+- O Pix expira em 1 hora. Os dados do pedido (itens, tamanho, cor, link da AliExpress, endereço) ficam nos **Logs da Vercel** com a marca `PEDIDO_PIX`; o pagamento confirmado aparece como `PIX_PAGO`. Não há banco de dados nesta versão.
+- No webhook do Mercado Pago, marque também o evento de **Orders** para receber `PAGAMENTO_ORDER` nos logs.
+- Se der erro, cadastre `DEBUG_CHECKOUT=1` na Vercel: o erro do Mercado Pago aparece na sacola.
+
 ## Fluxo de um pedido
 Cliente paga no Mercado Pago → você vê o pagamento aprovado no painel do Mercado Pago → abre os metadados do pagamento (tem produto, tamanho, cor, link da AliExpress, endereço) → compra na AliExpress/DSers com o endereço do cliente → envia o rastreio por WhatsApp/e-mail.
 

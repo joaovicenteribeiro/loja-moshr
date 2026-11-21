@@ -82,6 +82,7 @@ body.open .dr{transform:none}body.open .shade{display:block}
 .sum{border-top:1px solid var(--line);margin-top:auto;padding-top:12px;display:grid;gap:4px}.sum div{display:flex;justify-content:space-between}
 .f{display:grid;gap:8px}.f input{width:100%;padding:11px;background:transparent;border:1px solid var(--line)}
 .pgs{border:1px solid var(--line);padding:10px;display:grid;gap:6px;margin:0}.pgs legend{padding:0 6px}.pgs label{display:flex;gap:8px;align-items:center;font-size:.9rem}.f .pgs input{width:auto;padding:0;accent-color:var(--red)}
+.qr{width:100%;max-width:260px;display:block;margin:8px auto;border:1px solid var(--line);background:#fff}.cp{width:100%;padding:10px;background:transparent;border:1px solid var(--line);font-family:"Space Mono",monospace;font-size:.7rem;margin:8px 0}
 .f .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media (max-width:820px){.hero,.pg{grid-template-columns:1fr}.hero>div{padding:36px 20px}.top .l{display:none}}
 @media (prefers-reduced-motion:reduce){.dr{transition:none}}
@@ -163,13 +164,20 @@ if(!a.innerHTML.includes("<footer"))a.innerHTML+=foot();scrollTo(0,0)}
 const foot=()=>`<footer class="wrap mono"><span>© MOSHR — WEAR YOUR OWN IDENTITY.</span><span>CNPJ 00.000.000/0001-00 · contato@moshr.com.br</span><span>${LIVE?"":"DEMO · NÃO É UMA OFERTA REAL"}</span></footer>`;
 
 const tot=()=>{const s=L.reduce((a,i)=>a+pr(P.find(p=>p.id==i.id))*i.q,0);const f=!s||s>=250?0:24.9;return{s,f,t:s+f}};
-function drawer(){const d=$("#dr"),x=tot();let h=`<div class="dh"><h2>${step=="co"?"Finalizar":"Sacola"}</h2><button class="tb" id="cl" aria-label="Fechar">Fechar ×</button></div>`;
-if(step=="done")h+=`<p class="mono">${note}</p>`;
+let pix=null,timer=null;
+const pixView=()=>`<p class="mono">PEDIDO ${pix.no} · TOTAL ${R(pix.total)}</p><img class="qr" alt="QR Code Pix" src="data:image/png;base64,${pix.qrBase64}"><p class="mono">ESCANEIE NO APP DE QUALQUER BANCO OU USE O PIX COPIA E COLA.</p><input class="cp" id="cpv" readonly value="${pix.qr}" aria-label="Código Pix copia e cola"><button class="btn" id="cp">Copiar código Pix</button><p class="mono msg" id="ps">AGUARDANDO PAGAMENTO…</p>`;
+function poll(){clearInterval(timer);let n=0;timer=setInterval(async()=>{if(!pix)return clearInterval(timer);if(++n>450)return clearInterval(timer);
+try{const r=await fetch("/api/pix-status?id="+encodeURIComponent(pix.id)),j=await r.json();
+if(j.paid){clearInterval(timer);L=[];save();note=`PAGAMENTO CONFIRMADO! PEDIDO ${pix.no}. AVISAMOS PELO WHATSAPP QUANDO O PRODUTO FOR ENVIADO.`;pix=null;step="done";drawer()}
+else if(j.final){clearInterval(timer);const s=$("#ps");if(s)s.textContent="PIX EXPIRADO OU CANCELADO. FAÇA UM NOVO PEDIDO."}}catch(e){}},4000)}
+function drawer(){const d=$("#dr"),x=tot();let h=`<div class="dh"><h2>${step=="co"?"Finalizar":step=="pix"?"Pagamento Pix":"Sacola"}</h2><button class="tb" id="cl" aria-label="Fechar">Fechar ×</button></div>`;
+if(step=="pix"&&pix)h+=pixView();
+else if(step=="done")h+=`<p class="mono">${note}</p>`;
 else if(!L.length)h+=`<p class="mono">SUA SACOLA ESTÁ VAZIA.</p><a class="btn" href="#loja" id="go">Ver coleção</a>`;
 else{h+=L.map((i,k)=>{const p=P.find(z=>z.id==i.id);return `<div class="li">${ph(p)}<div><b>${p.n}</b><br><span class="mono">${i.k} · ${i.s} · ${R(pr(p))}</span></div><div class="qty"><button data-q="${k}" data-d="-1" aria-label="Diminuir">−</button><span>${i.q}</span><button data-q="${k}" data-d="1" aria-label="Aumentar">+</button></div></div>`}).join("");
 h+=`<div class="sum mono"><div><span>SUBTOTAL</span><span>${R(x.s)}</span></div><div><span>FRETE (10–20 DIAS ÚTEIS)</span><span>${x.f?R(x.f):"GRÁTIS"}</span></div><div style="font-size:1rem"><b>TOTAL</b><b>${R(x.t)}</b></div></div>`;
 if(step=="cart")h+=`<button class="btn" id="co" style="margin-top:14px">Finalizar pedido</button>`;
-else h+=`<form class="f" id="ff" style="margin-top:14px" novalidate><input name="nome" placeholder="Nome completo" autocomplete="name"><input name="email" type="email" placeholder="E-mail" autocomplete="email"><input name="zap" placeholder="Telefone com DDD" autocomplete="tel"><div class="two"><input name="cep" placeholder="CEP" autocomplete="postal-code"><input name="num" placeholder="Número"></div><input name="end" placeholder="Endereço" autocomplete="street-address"><div class="two"><input name="cid" placeholder="Cidade"><input name="uf" placeholder="UF" maxlength="2"></div><fieldset class="pgs"><legend class="mono">FORMA DE PAGAMENTO</legend>${[["todas","Escolher no Mercado Pago"],["pix","Pix"],["credito","Cartão de crédito (até 6x)"],["debito","Cartão de débito"],["mp","Conta Mercado Pago"]].map(([v,t])=>`<label><input type="radio" name="pg" value="${v}" ${v=="todas"?"checked":""}> ${t}</label>`).join("")}</fieldset><div class="msg mono" id="fe"></div><button class="btn">Pagar com Mercado Pago</button><button type="button" class="tb" id="bk">← Voltar à sacola</button></form>`}
+else h+=`<form class="f" id="ff" style="margin-top:14px" novalidate><input name="nome" placeholder="Nome completo" autocomplete="name"><input name="email" type="email" placeholder="E-mail" autocomplete="email"><input name="zap" placeholder="Telefone com DDD" autocomplete="tel"><div class="two"><input name="cep" placeholder="CEP" autocomplete="postal-code"><input name="num" placeholder="Número"></div><input name="end" placeholder="Endereço" autocomplete="street-address"><div class="two"><input name="cid" placeholder="Cidade"><input name="uf" placeholder="UF" maxlength="2"></div><fieldset class="pgs"><legend class="mono">FORMA DE PAGAMENTO</legend>${[["todas","Escolher no Mercado Pago"],["pix","Pix (QR Code aqui mesmo)"],["credito","Cartão de crédito (até 6x)"],["debito","Cartão de débito"],["mp","Conta Mercado Pago"]].map(([v,t])=>`<label><input type="radio" name="pg" value="${v}" ${v=="todas"?"checked":""}> ${t}</label>`).join("")}</fieldset><div class="msg mono" id="fe"></div><button class="btn">Pagar com Mercado Pago</button><button type="button" class="tb" id="bk">← Voltar à sacola</button></form>`}
 d.innerHTML=h}
 function open_(v){document.body.classList.toggle("open",v);$("#dr").setAttribute("aria-hidden",!v);if(v){if(step=="done"){step="cart";L=[];save()}drawer()}}
 
@@ -184,7 +192,9 @@ else if(t.id=="bc")open_(true);
 else if(t.id=="bs"){location.hash="loja";setTimeout(()=>$("#q")&&$("#q").focus(),50)}
 else if(t.id=="cl"||t.id=="shade"||t.id=="go")open_(false);
 else if(t.id=="co"){step="co";drawer()}
-else if(t.id=="bk"){step="cart";drawer()}});
+else if(t.id=="bk"){step="cart";drawer()}
+else if(t.id=="cp"&&pix){const m=$("#ps");const ok=()=>{if(m)m.textContent="CÓDIGO COPIADO. COLE NO PIX COPIA E COLA DO SEU BANCO."};
+if(navigator.clipboard)navigator.clipboard.writeText(pix.qr).then(ok).catch(()=>{$("#cpv").select()});else $("#cpv").select()}});
 document.addEventListener("input",e=>{if(e.target.id=="q"){F.q=e.target.value;list()}});
 document.addEventListener("change",e=>{const i=e.target.id;if(i=="sz")F.size=e.target.value;else if(i=="mx")F.max=+e.target.value;else if(i=="so")F.sort=e.target.value;else return;list()});
 document.addEventListener("submit",e=>{e.preventDefault();
@@ -196,6 +206,10 @@ if(v.zap.replace(/\D/g,"").length<10)return er("INFORME O TELEFONE COM DDD.");
 if(v.cep.replace(/\D/g,"").length!=8)return er("CEP COM 8 NÚMEROS.");
 if(!v.end.trim()||!v.num.trim()||!v.cid.trim()||v.uf.trim().length!=2)return er("COMPLETE O ENDEREÇO, CIDADE E UF.");
 const no="MSH-"+Date.now().toString(36).toUpperCase();
+if(v.pg==="pix"&&CONFIG.checkoutUrl){const bt=e.target.querySelector("button.btn");bt.disabled=true;bt.textContent="GERANDO PIX…";
+fetch("/api/pix",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,ref:no})})
+.then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{if(!ok||!j.qr)throw j;pix={...j,no};step="pix";drawer();poll()})
+.catch(j=>{bt.disabled=false;bt.textContent="Pagar com Mercado Pago";const m=$("#fe");if(m)m.textContent=((j&&j.erro)||"NÃO FOI POSSÍVEL GERAR O PIX. TENTE NOVAMENTE.")+(j&&j.debug?" "+JSON.stringify(j.debug):"")});return}
 if(CONFIG.checkoutUrl){const q=new URLSearchParams({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,pg:v.pg||"todas",ref:no});const u=CONFIG.checkoutUrl+"?"+q;window.open(u,"_blank");note=`PEDIDO ${no} CRIADO. O MERCADO PAGO ABRIU EM OUTRA ABA. SE NÃO ABRIU, USE O LINK: ${u}`}
 else note=`PEDIDO DE TESTE ${no} REGISTRADO. ISTO É UMA SIMULAÇÃO: NENHUMA COBRANÇA FOI FEITA E NENHUMA COMPRA FOI ENVIADA AO FORNECEDOR.`;
 step="done";drawer()}});

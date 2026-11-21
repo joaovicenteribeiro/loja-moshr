@@ -21,6 +21,16 @@ export default async function handler(req, res) {
       console.warn("MP_WEBHOOK_SECRET ausente: assinatura não validada (o pagamento ainda é consultado na API).");
     }
 
+    // Pix pelo Checkout Transparente chega como notificação de "order".
+    if (String(type).startsWith("order") && dataId) {
+      const ro = await fetch(`https://api.mercadopago.com/v1/orders/${encodeURIComponent(dataId)}`, {
+        headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+      });
+      if (!ro.ok) return res.status(500).send("falha ao consultar order");
+      const o = await ro.json();
+      console.log("PAGAMENTO_ORDER", JSON.stringify({ order: o.id, status: o.status, detalhe: o.status_detail, pedido: o.external_reference, valor: o.total_amount }));
+      return res.status(200).send("ok");
+    }
     if (type !== "payment" || !dataId) return res.status(200).send("ignorado");
 
     const r = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(dataId)}`, {
