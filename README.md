@@ -39,6 +39,17 @@ Não há importação automática por link: a AliExpress só oferece API a parce
 6. **Conferir:** na Vercel, abra Logs da função `api/webhook`. Aparece uma linha `PAGAMENTO` com status, valor, pedido e o link da AliExpress de cada item. Só `"status":"approved"` significa pago.
 7. **Erro 502 no checkout:** veja os Logs de `api/checkout`; o motivo enviado pelo Mercado Pago aparece em "Mercado Pago recusou a preferência".
 
+## Banco de dados (Supabase) e painel de pedidos
+1. No Supabase: **SQL Editor > New query**, cole `supabase/schema.sql` e clique em **Run**. Cria `pedidos`, `pedido_itens` e `pedido_eventos`, com RLS ligado e permissão só para o servidor (`service_role`).
+2. Em **Project Settings > API Keys**, copie a **secret key** (`sb_secret_...`) e a URL do projeto.
+3. Na Vercel (Environment Variables): `SUPABASE_URL`, `SUPABASE_SECRET_KEY` e `ADMIN_PASSWORD` (12+ caracteres). Faça Redeploy.
+4. Abra `/api/health`: deve mostrar `"SUPABASE":true` e `"banco":"ok (tabelas acessíveis)"`.
+5. Painel: `https://SEU-SITE/admin.html` (entra com a ADMIN_PASSWORD). Mostra cada pedido com cliente, endereço, itens, custo, lucro estimado e o link da AliExpress; permite mudar o status e salvar o rastreio.
+
+Como funciona: o pedido é gravado **antes** de gerar o Pix ou abrir o Checkout Pro (se o banco falhar, nada é cobrado). O pagamento confirmado pelo Mercado Pago (webhook ou consulta do Pix) muda o status para **pago**, uma única vez. Sem as variáveis do Supabase o site continua vendendo, mas sem registrar pedidos.
+
+A secret key dá acesso total ao banco: fica só na Vercel, nunca no GitHub, no site ou no chat.
+
 ## Pix com QR Code no próprio site
 - Ao escolher **Pix** na sacola, o site chama `api/pix.js`, que cria o pagamento (Checkout Transparente, Orders API) e devolve o QR Code e o "copia e cola". O cliente paga no app de qualquer banco.
 - `api/pix-status.js` é consultado a cada 4 s; só o Mercado Pago decide se está pago (`processed` + `accredited`).

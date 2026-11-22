@@ -4,6 +4,7 @@
 // Env: MP_ACCESS_TOKEN, SITE_URL (opcional: DEBUG_CHECKOUT=1 mostra o erro do Mercado Pago).
 import { loadCatalog } from "./_catalog.js";
 import { limited } from "./_limit.js";
+import { novoNumero, criarPedido, falhaPedido, definirGateway } from "./_orders.js";
 
 const FRETE = 24.9, GRATIS_ACIMA = 250; // mesmos valores exibidos no site
 const priceOf = (p) => p.promo || p.preco;
@@ -34,7 +35,25 @@ export default async function handler(req, res) {
     if (!lines.length) return res.status(400).json({ erro: "Carrinho vazio" });
     if (!/^\S+@\S+\.\S+$/.test(String(q.email || "").trim())) return res.status(400).json({ erro: "E-mail inválido" });
 
+    const nome = String(q.nome || "").trim().slice(0, 100);
+    if (nome.length < 3) return res.status(400).json({ erro: "Informe o nome completo" });
     const subtotal = lines.reduce((a, l) => a + priceOf(l.p) * l.qty, 0);
+    const frete = subtotal >= GRATIS_ACIMA ? 0 : FRETE;
+    const numero = novoNumero();
+    // 1) grava o pedido ANTES de abrir o pagamento: nunca existe cobrança sem registro.
+    try {
+      await criarPedido({
+        numero, forma: "checkout_pro", subtotal, frete, total: +(subtotal + frete).toFixed(2),
+        cliente: { nome, email: String(q.email).trim().slice(0, 120), telefone: String(q.zap || "").slice(0, 30) },
+        entrega: { cep: String(q.cep || "").replace(/\D/g, "").slice(0, 8), endereco: String(q.end || "").slice(0, 150),
+          numero_endereco: String(q.num || "").slice(0, 20), cidade: String(q.cid || "").slice(0, 80), uf: String(q.uf || "").toUpperCase().slice(0, 2) },
+        itens: lines.map((l) => ({ produto_id: Number(l.id), nome: l.p.nome, tamanho: l.size, cor: l.color, quantidade: l.qty,
+          preco_unit: priceOf(l.p), custo_unit: l.p.custo || null, link_fornecedor: l.p.aliexpress || null })),
+      });
+    } catch (e) {
+      console.error("Supabase falhou ao criar o pedido:", e.message);
+      return res.status(500).json({ erro: "Não foi possível registrar o pedido. Tente novamente." });
+    }
     // Normaliza SITE_URL: o Mercado Pago rejeita back_urls inválidas (sem https:// ou com espaço).
     let site = String(process.env.SITE_URL || "").trim().replace(/\/+$/, "");
     if (site && !/^https:\/\//.test(site)) site = /^http:\/\//.test(site) ? "" : "https://" + site;
@@ -42,14 +61,14 @@ export default async function handler(req, res) {
     const preference = {
       items: lines.map((l) => ({ id: String(l.id), title: `${l.p.nome} (${l.size} / ${l.color})`,
         quantity: l.qty, currency_id: "BRL", unit_price: +priceOf(l.p).toFixed(2) })),
-      shipments: { cost: subtotal >= GRATIS_ACIMA ? 0 : FRETE, mode: "not_specified" },
+      shipments: { cost: frete, mode: "not_specified" },
       payer: {
         name: String(q.nome || "").slice(0, 80), email: String(q.email).trim().slice(0, 120),
         phone: { number: String(q.zap || "").replace(/\D/g, "") },
         address: { zip_code: String(q.cep || "").replace(/\D/g, ""), street_name: String(q.end || "").slice(0, 120) },
       },
       payment_methods: methodsFor(String(q.pg || "todas")),
-      external_reference: String(q.ref || `moshr-${Date.now()}`).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64),
+      external_reference: numero,
       // Dados para você comprar na AliExpress depois que o pagamento for aprovado:
       metadata: { cep: String(q.cep || "").replace(/\D/g, ""), numero: q.num, cidade: q.cid, uf: q.uf,
         fornecedor: lines.map((l) => `${l.qty}x ${l.p.nome} | ${l.size} | ${l.color} | ${l.p.aliexpress || "link não cadastrado"}`) },
@@ -64,11 +83,13 @@ export default async function handler(req, res) {
     const data = await r.json();
     if (!r.ok || !data.init_point) {
       console.error("Mercado Pago recusou a preferência:", r.status, JSON.stringify(data));
+      await falhaPedido(numero, "mercado_pago_recusou").catch(() => {});
       const out = { erro: "Não foi possível abrir o pagamento. Tente novamente." };
       if (process.env.DEBUG_CHECKOUT === "1") out.debug = { mp_status: r.status, mp: data };
       return res.status(502).json(out);
     }
-    res.status(200).json({ url: data.init_point });
+    await definirGateway(numero, data.id).catch((e) => console.error("gateway_id:", e.message));
+    res.status(200).json({ url: data.init_point, numero });
   } catch (e) {
     console.error("checkout erro", e.message);
     res.status(500).json({ erro: "Erro interno" });

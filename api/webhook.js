@@ -3,6 +3,7 @@
 // 2) NÃO confia no corpo da notificação: consulta o pagamento direto na API do Mercado Pago;
 // 3) registra o resultado nos logs da Vercel (sem banco de dados nesta versão).
 import crypto from "node:crypto";
+import { marcarPago, encerrar } from "./_orders.js";
 
 export default async function handler(req, res) {
   try {
@@ -29,6 +30,9 @@ export default async function handler(req, res) {
       if (!ro.ok) return res.status(500).send("falha ao consultar order");
       const o = await ro.json();
       console.log("PAGAMENTO_ORDER", JSON.stringify({ order: o.id, status: o.status, detalhe: o.status_detail, pedido: o.external_reference, valor: o.total_amount }));
+      if (o.status === "processed" && o.status_detail === "accredited") await marcarPago(o.external_reference, { order: o.id, via: "webhook" });
+      else if (o.status === "expired") await encerrar(o.external_reference, "expirado", { order: o.id });
+      else if (o.status === "canceled") await encerrar(o.external_reference, "cancelado", { order: o.id });
       return res.status(200).send("ok");
     }
     if (type !== "payment" || !dataId) return res.status(200).send("ignorado");
@@ -45,6 +49,7 @@ export default async function handler(req, res) {
       valor: p.transaction_amount, comprador: p.payer?.email, fornecedor: p.metadata?.fornecedor,
       entrega: { cep: p.metadata?.cep, numero: p.metadata?.numero, cidade: p.metadata?.cidade, uf: p.metadata?.uf },
     }));
+    if (p.status === "approved") await marcarPago(p.external_reference, { payment: p.id, metodo: p.payment_method_id, via: "webhook" });
     res.status(200).send("ok");
   } catch (e) {
     console.error("webhook erro", e.message);

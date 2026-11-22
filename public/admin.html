@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Pedidos – MOSHR</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#E8E5DF;--ink:#090909;--red:#8F1725;--line:#090909;--ok:#1d6b3a;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#090909;--ink:#E8E5DF;--line:#4a4a4a;--ok:#5cc58a;color-scheme:dark}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+.mono{font-family:ui-monospace,"Space Mono",monospace;font-size:.78rem}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+header b{letter-spacing:.12em;font-weight:900}
+main{max-width:960px;margin:0 auto;padding:20px}
+button,select,input,textarea{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:0;padding:8px 10px}
+button{cursor:pointer;background:var(--ink);color:var(--bg);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.78rem}
+button.o{background:transparent;color:var(--ink)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+form#login{display:flex;gap:8px;max-width:420px;margin:48px auto}form#login input{flex:1}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.o{border:1px solid var(--line);padding:14px;margin-bottom:14px;display:grid;gap:10px}
+.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tag{display:inline-block;border:1px solid var(--line);padding:1px 8px}
+.pago{color:var(--ok);border-color:var(--ok)}
+.it{display:grid;grid-template-columns:1fr auto;gap:4px 12px;border-top:1px solid var(--line);padding-top:8px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px}.f textarea{grid-column:1/-1;min-height:54px}
+.msg{color:var(--red);min-height:1.3em}
+a{color:inherit}
+@media (max-width:640px){.f{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><b>MOSHR · PEDIDOS</b><button class="o" id="sair" hidden>Sair</button></header>
+<main>
+  <form id="login"><input id="pw" type="password" placeholder="Senha do painel" autocomplete="current-password" aria-label="Senha"><button>Entrar</button></form>
+  <p class="msg mono" id="lm" style="text-align:center"></p>
+  <section id="painel" hidden>
+    <div class="bar"><select id="fs" aria-label="Filtrar por status"></select><button class="o" id="at">Atualizar</button><span class="mono" id="cnt"></span></div>
+    <p class="msg mono" id="gm"></p>
+    <div id="lista"></div>
+  </section>
+</main>
+<script>
+const ST={aguardando_pagamento:"Aguardando pagamento",pago:"Pago",em_processamento:"Em processamento",comprado_fornecedor:"Comprado no fornecedor",enviado:"Enviado",entregue:"Entregue",cancelado:"Cancelado",expirado:"Expirado"};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const R=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+let pw="";try{pw=sessionStorage.getItem("moshr-admin")||""}catch(e){}
+async function api(method,body,qs){const r=await fetch("/api/admin/pedidos"+(qs||""),{method,headers:{"x-admin-password":pw,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.erro||"Erro"),{status:r.status});return j}
+$("#fs").innerHTML='<option value="">Todos os status</option>'+Object.entries(ST).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+function card(p){const itens=p.pedido_itens||[];const lucro=itens.reduce((a,i)=>a+(Number(i.preco_unit)-Number(i.custo_unit||0))*i.quantidade,0);const semCusto=itens.some(i=>!i.custo_unit);
+let tel=String(p.cliente_telefone||"").replace(/\D/g,"");if(tel&&!tel.startsWith("55"))tel="55"+tel;
+const dt=new Date(p.criado_em).toLocaleString("pt-BR");
+return `<article class="o" data-n="${esc(p.numero)}"><div class="top"><div><b>${esc(p.numero)}</b> <span class="tag mono ${p.status=="pago"?"pago":""}">${esc(ST[p.status]||p.status)}</span><br><span class="mono">${esc(dt)} · ${p.forma_pagamento=="pix"?"Pix":"Cartão/Mercado Pago"}</span></div><div style="text-align:right"><b>${R(p.total)}</b><br><span class="mono">frete ${R(p.frete)}</span></div></div>
+<div><b>${esc(p.cliente_nome)}</b> · <a href="mailto:${esc(p.cliente_email)}">${esc(p.cliente_email)}</a>${tel.length>=12?` · <a href="https://wa.me/${esc(tel)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`:""}<br><span class="mono">${esc(p.endereco)}, ${esc(p.numero_endereco)} · ${esc(p.cidade)}/${esc(p.uf)} · CEP ${esc(p.cep)} · tel ${esc(p.cliente_telefone)}</span></div>
+${itens.map(i=>`<div class="it"><div>${i.quantidade}x <b>${esc(i.nome)}</b> · ${esc(i.tamanho)} · ${esc(i.cor)}<br><span class="mono">venda ${R(i.preco_unit)} · custo ${i.custo_unit?R(i.custo_unit):"não informado"}</span></div><div>${/^https:\/\//.test(i.link_fornecedor||"")?`<a href="${esc(i.link_fornecedor)}" target="_blank" rel="noopener noreferrer">Comprar na AliExpress ↗</a>`:'<span class="mono">sem link</span>'}</div></div>`).join("")}
+<div class="mono">Lucro estimado: ${R(lucro)}${semCusto?" (faltam custos)":""} — antes das taxas do Mercado Pago.</div>
+<div class="f"><select class="st" aria-label="Status">${Object.entries(ST).map(([k,v])=>`<option value="${k}" ${p.status==k?"selected":""}>${v}</option>`).join("")}</select><input class="ra" value="${esc(p.rastreio||"")}" placeholder="Código de rastreio" aria-label="Rastreio"><textarea class="ob" placeholder="Observações" aria-label="Observações">${esc(p.observacoes||"")}</textarea></div>
+<div><button class="sv">Salvar</button> <span class="msg mono"></span></div></article>`}
+async function carregar(){$("#gm").textContent="";try{const rows=await api("GET",null,$("#fs").value?"?status="+$("#fs").value:"");
+$("#lista").innerHTML=rows.length?rows.map(card).join(""):'<p class="mono">NENHUM PEDIDO.</p>';$("#cnt").textContent=rows.length+" PEDIDOS";return true}
+catch(e){if(e.status==401){entrar(false)}$("#gm").textContent=e.message;return false}}
+function entrar(ok){$("#login").hidden=ok;$("#painel").hidden=!ok;$("#sair").hidden=!ok;if(!ok)$("#lm").textContent=pw?"":""}
+$("#login").addEventListener("submit",async e=>{e.preventDefault();pw=$("#pw").value;$("#lm").textContent="";
+try{await api("GET");try{sessionStorage.setItem("moshr-admin",pw)}catch(x){}entrar(true);carregar()}catch(x){$("#lm").textContent=x.status==401?"SENHA INCORRETA.":x.message;pw=""}});
+$("#sair").addEventListener("click",()=>{pw="";try{sessionStorage.removeItem("moshr-admin")}catch(e){}$("#pw").value="";entrar(false)});
+$("#at").addEventListener("click",carregar);$("#fs").addEventListener("change",carregar);
+$("#lista").addEventListener("click",async e=>{if(!e.target.classList.contains("sv"))return;const c=e.target.closest(".o"),m=c.querySelector(".msg");m.textContent="Salvando…";
+try{await api("PATCH",{numero:c.dataset.n,status:c.querySelector(".st").value,rastreio:c.querySelector(".ra").value,observacoes:c.querySelector(".ob").value});m.textContent="Salvo.";setTimeout(carregar,600)}catch(x){m.textContent=x.message}});
+if(pw){api("GET").then(()=>{entrar(true);carregar()}).catch(()=>{pw="";entrar(false)})}
+</script>
+</body>
+</html>

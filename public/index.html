@@ -252,7 +252,7 @@ if(!v.end.trim()||!v.num.trim()||!v.cid.trim()||v.uf.trim().length!=2)return er(
 const no="MSH-"+Date.now().toString(36).toUpperCase();
 if(v.pg==="pix"&&CONFIG.checkoutUrl){const bt=e.target.querySelector("button.btn");bt.disabled=true;bt.textContent="GERANDO PIX…";
 fetch("/api/pix",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,ref:no})})
-.then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{if(!ok||!j.qr)throw j;pix={...j,no};step="pix";drawer();poll()})
+.then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{if(!ok||!j.qr)throw j;pix={...j,no:j.numero||no};step="pix";drawer();poll()})
 .catch(j=>{bt.disabled=false;bt.textContent="Pagar com Mercado Pago";const m=$("#fe");if(m)m.textContent=((j&&j.erro)||"NÃO FOI POSSÍVEL GERAR O PIX. TENTE NOVAMENTE.")+(j&&j.debug?" "+JSON.stringify(j.debug):"")});return}
 if(CONFIG.checkoutUrl){const bt=e.target.querySelector("button.btn");bt.disabled=true;bt.textContent="REDIRECIONANDO…";
 fetch(CONFIG.checkoutUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,pg:v.pg||"todas",ref:no})})
