@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MOSHR – Wear your own identity.</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="description" content="MOSHR: moda alternativa independente. Grunge, goth, punk, emo, cyber e streetwear. Envio para todo o Brasil.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MOSHR – Wear your own identity.">
+<meta property="og:description" content="Moda alternativa independente. Grunge, goth, punk, emo, cyber e streetwear.">
+<meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#E8E5DF;--ink:#090909;--gr:#202020;--ag:#C4C4C4;--red:#8F1725;--rt:#8F1725;--ph1:#C4C4C4;--ph2:#d6d3cc;--line:#090909;color-scheme:light;
@@ -73,6 +79,7 @@ nav a:hover,nav a[aria-current]{color:var(--rt)}
 .man p{font-size:clamp(1.3rem,3vw,2.2rem);font-weight:500;max-width:30ch;line-height:1.15;margin:0 0 20px}
 .nl{display:flex;gap:0;max-width:480px}.nl input{flex:1;background:transparent;border:1px solid var(--line);padding:12px;min-width:0}
 footer{padding:36px 0 48px;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between}
+.wa{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:15;background:var(--ink);color:var(--bg);padding:12px 16px;text-decoration:none;font-weight:700;letter-spacing:.08em;border:1px solid var(--ink)}.wa:hover{background:var(--red);border-color:var(--red);color:#fff}
 .shade{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:none}
 .dr{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg);border-left:1px solid var(--line);z-index:41;transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column;padding:20px;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));overflow:auto}
 body.open .dr{transform:none}body.open .shade{display:block}
@@ -167,9 +174,37 @@ function route(){const h=location.hash.slice(1)||"home";nav(h.startsWith("produt
 if(h.startsWith("produto-"))a.innerHTML=prod(h.slice(8));
 else if(h.startsWith("tipo-")){F.tipo=TL[h.slice(5)]?h.slice(5):"todos";F.cat="todas";a.innerHTML=loja();list()}
 else if(h.startsWith("loja")){F.cat=h.slice(5)||"todas";if(!C[F.cat])F.cat="todas";F.tipo="todos";a.innerHTML=loja();list()}
+else if(LEGAL[h])a.innerHTML=legalPage(h);
 else a.innerHTML=home()+foot();
 if(!a.innerHTML.includes("<footer"))a.innerHTML+=foot();scrollTo(0,0)}
-const foot=()=>`<footer class="wrap mono"><span>© MOSHR — WEAR YOUR OWN IDENTITY.</span><span>CNPJ 00.000.000/0001-00 · contato@moshr.com.br</span><span>${LIVE?"":"DEMO · NÃO É UMA OFERTA REAL"}</span></footer>`;
+const LOJA={email:"moshtstore@gmail.com",instagram:"lojamoshr",whatsapp:"",vendedor:{}};
+const ctt=()=>[LOJA.email&&`<a href="mailto:${LOJA.email}">${LOJA.email}</a>`,LOJA.instagram&&`<a href="https://instagram.com/${LOJA.instagram}" target="_blank" rel="noopener">@${LOJA.instagram}</a>`,String(LOJA.whatsapp||"").replace(/\D/g,"")&&`<a href="https://wa.me/${String(LOJA.whatsapp).replace(/\D/g,"")}" target="_blank" rel="noopener">WhatsApp</a>`].filter(Boolean).join(" · ");
+const vend=()=>{const v=LOJA.vendedor||{};return v.nome?[v.nome,v.documento,v.endereco].filter(Boolean).join(", "):""};
+const sec=(t,b)=>`<h3 style="margin:28px 0 8px;font-size:1.1rem">${t}</h3>${b}`;
+const LEGAL={
+troca:["Troca e devolução",()=>`<p>Estas regras seguem o Código de Defesa do Consumidor. Se algo não ficar claro, fale com a gente: ${ctt()}.</p>
+${sec("Arrependimento (7 dias)",`<p>Você pode desistir da compra em até <b>7 dias corridos</b> a partir do recebimento do produto, sem precisar explicar o motivo. Devolvemos o valor pago, incluindo o frete, pelo mesmo meio de pagamento (Pix ou cartão; no cartão o estorno aparece na fatura conforme o prazo da operadora).</p>`)}
+${sec("Como pedir",`<p>Envie uma mensagem com o número do pedido (começa com MSH-) e o seu nome, pelo contato abaixo. A peça deve estar sem uso, limpa e na embalagem. Vamos informar como devolver.</p>`)}
+${sec("Defeito ou produto diferente do pedido",`<p>Avise em até <b>30 dias</b> do recebimento, com fotos. Podemos reenviar, trocar ou devolver o valor, conforme a sua escolha e o que a lei prevê.</p>`)}
+${sec("Tamanho",`<p>Confira a tabela de medidas na página do produto antes de comprar. Troca por tamanho ou modelo combinamos caso a caso pelo contato.</p>`)}
+${sec("Contato",`<p>${ctt()}</p>`)}`],
+privacidade:["Política de privacidade",()=>`<p>Explicamos aqui como tratamos os seus dados, conforme a Lei Geral de Proteção de Dados (LGPD).</p>
+${sec("Quais dados coletamos",`<p>Nome, e-mail, telefone, CEP e endereço de entrega, e os itens do pedido. <b>Não guardamos dados de cartão</b>: o pagamento é feito no Mercado Pago.</p>`)}
+${sec("Para que usamos",`<p>Para processar o pagamento, comprar e enviar o produto, avisar sobre o pedido e o rastreio, atender você e cumprir obrigações legais.</p>`)}
+${sec("Com quem compartilhamos",`<ul><li>Mercado Pago, para processar o pagamento.</li><li>Fornecedores e transportadoras, <b>inclusive empresas no exterior</b>, que recebem nome, endereço e telefone para entregar o pedido.</li><li>Serviços de hospedagem do site, que registram dados técnicos de acesso.</li></ul><p>Não vendemos os seus dados.</p>`)}
+${sec("Armazenamento no navegador",`<p>Usamos o armazenamento do navegador (localStorage) apenas para lembrar a sua sacola. Não usamos cookies de publicidade.</p>`)}
+${sec("Seus direitos",`<p>Você pode pedir acesso, correção ou exclusão dos seus dados, e informações sobre o compartilhamento, pelo contato: ${ctt()}. Guardamos os dados pelo tempo necessário para cumprir a lei e atender você.</p>`)}`],
+termos:["Termos de uso",()=>`${vend()?`<p>Loja operada por <b>${vend()}</b>.</p>`:""}
+${sec("Pedidos e pagamento",`<p>Aceitamos Pix, cartão de crédito (até 6x), cartão de débito e conta Mercado Pago. O pedido só é confirmado depois que o Mercado Pago aprova o pagamento. O Pix gerado no site vale por 1 hora.</p>`)}
+${sec("Preços e disponibilidade",`<p>Vale o preço mostrado no momento da compra. Se uma peça ficar indisponível depois do pagamento, avisamos e devolvemos o valor integral.</p>`)}
+${sec("Entrega",`<p>Os produtos vêm de fornecedores parceiros, e o prazo estimado é de <b>10 a 20 dias úteis</b> depois da confirmação do pagamento. O frete é R$ 24,90, e é grátis em compras a partir de R$ 250. Enviamos o código de rastreio quando o pedido for despachado.</p>`)}
+${sec("Trocas e devoluções",`<p>Veja a página <a href="#troca">Troca e devolução</a>.</p>`)}
+${sec("Conteúdo do site",`<p>Os textos, imagens e a marca MOSHR não podem ser copiados sem autorização.</p>`)}
+${sec("Contato",`<p>${ctt()}</p>`)}`],
+contato:["Contato",()=>`<p>Fale com a gente pelos canais abaixo. Para agilizar, informe o número do pedido (MSH-…).</p><p style="font-size:1.1rem">${ctt()}</p>${vend()?`<p class="mono">${vend()}</p>`:""}`]};
+function legalPage(h){const [t,f]=LEGAL[h];return `<div class="wrap" style="max-width:760px;padding:40px 20px 64px"><span class="mono">INFORMAÇÕES</span><h1 style="font-size:clamp(2rem,5vw,3.4rem);font-weight:900;margin:10px 0 18px">${t}</h1>${f()}</div>`}
+function wa(){const n=String(LOJA.whatsapp||"").replace(/\D/g,"");if(!n||$(".wa"))return;const a=document.createElement("a");a.className="wa mono";a.href="https://wa.me/"+n;a.target="_blank";a.rel="noopener";a.textContent="WHATSAPP";document.body.appendChild(a)}
+const foot=()=>`<footer class="wrap mono"><span>© MOSHR — WEAR YOUR OWN IDENTITY.</span><span>${ctt()}</span><span><a href="#troca">Troca e devolução</a> · <a href="#privacidade">Privacidade</a> · <a href="#termos">Termos</a> · <a href="#contato">Contato</a></span>${vend()?`<span>${vend()}</span>`:""}<span>${LIVE?"":"DEMO · NÃO É UMA OFERTA REAL"}</span></footer>`;
 
 const tot=()=>{const s=L.reduce((a,i)=>a+pr(P.find(p=>p.id==i.id))*i.q,0);const f=!s||s>=250?0:24.9;return{s,f,t:s+f}};
 let pix=null,timer=null;
@@ -183,11 +218,11 @@ if(step=="pix"&&pix)h+=pixView();
 else if(step=="done")h+=`<p class="mono">${note}</p>`;
 else if(!L.length)h+=`<p class="mono">SUA SACOLA ESTÁ VAZIA.</p><a class="btn" href="#loja" id="go">Ver coleção</a>`;
 else{h+=L.map((i,k)=>{const p=P.find(z=>z.id==i.id);return `<div class="li">${ph(p)}<div><b>${p.n}</b><br><span class="mono">${i.k} · ${i.s} · ${R(pr(p))}</span></div><div class="qty"><button data-q="${k}" data-d="-1" aria-label="Diminuir">−</button><span>${i.q}</span><button data-q="${k}" data-d="1" aria-label="Aumentar">+</button></div></div>`}).join("");
-h+=`<div class="sum mono"><div><span>SUBTOTAL</span><span>${R(x.s)}</span></div><div><span>FRETE (10–20 DIAS ÚTEIS)</span><span>${x.f?R(x.f):"GRÁTIS"}</span></div><div style="font-size:1rem"><b>TOTAL</b><b>${R(x.t)}</b></div></div>`;
+h+=`<p class="mono" style="margin:12px 0 4px">${x.s>=250?"VOCÊ GANHOU FRETE GRÁTIS":"FALTAM "+R(250-x.s)+" PARA FRETE GRÁTIS"}</p><div style="height:4px;background:var(--line)"><div style="height:4px;width:${Math.min(100,x.s/2.5)}%;background:var(--red)"></div></div><div class="sum mono"><div><span>SUBTOTAL</span><span>${R(x.s)}</span></div><div><span>FRETE (10–20 DIAS ÚTEIS)</span><span>${x.f?R(x.f):"GRÁTIS"}</span></div><div style="font-size:1rem"><b>TOTAL</b><b>${R(x.t)}</b></div></div>`;
 if(step=="cart")h+=`<button class="btn" id="co" style="margin-top:14px">Finalizar pedido</button>`;
 else h+=`<form class="f" id="ff" style="margin-top:14px" novalidate><input name="nome" placeholder="Nome completo" autocomplete="name"><input name="email" type="email" placeholder="E-mail" autocomplete="email"><input name="zap" placeholder="Telefone com DDD" autocomplete="tel"><div class="two"><input name="cep" placeholder="CEP" autocomplete="postal-code"><input name="num" placeholder="Número"></div><input name="end" placeholder="Endereço" autocomplete="street-address"><div class="two"><input name="cid" placeholder="Cidade"><input name="uf" placeholder="UF" maxlength="2"></div><fieldset class="pgs"><legend class="mono">FORMA DE PAGAMENTO</legend>${[["todas","Escolher no Mercado Pago"],["pix","Pix (QR Code aqui mesmo)"],["credito","Cartão de crédito (até 6x)"],["debito","Cartão de débito"],["mp","Conta Mercado Pago"]].map(([v,t])=>`<label><input type="radio" name="pg" value="${v}" ${v=="todas"?"checked":""}> ${t}</label>`).join("")}</fieldset><div class="msg mono" id="fe"></div><button class="btn">Pagar com Mercado Pago</button><button type="button" class="tb" id="bk">← Voltar à sacola</button></form>`}
 d.innerHTML=h}
-function open_(v){document.body.classList.toggle("open",v);$("#dr").setAttribute("aria-hidden",!v);if(v){if(step=="done"){step="cart";L=[];save()}drawer()}}
+function open_(v){document.body.classList.toggle("open",v);$("#dr").setAttribute("aria-hidden",!v);["header","#app"].forEach(s=>{const el=$(s);if(el)el.inert=v});if(v){if(step=="done"){step="cart";L=[];save()}drawer();const c=$("#cl");c&&c.focus()}else{const b=$("#bc");b&&b.focus()}}
 
 document.addEventListener("click",e=>{const t=e.target.closest("button,a");if(!t)return;const D=t.dataset;
 if(D.cat){F.cat=D.cat;$("#app").innerHTML=loja();list()}
@@ -219,8 +254,11 @@ if(v.pg==="pix"&&CONFIG.checkoutUrl){const bt=e.target.querySelector("button.btn
 fetch("/api/pix",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,ref:no})})
 .then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{if(!ok||!j.qr)throw j;pix={...j,no};step="pix";drawer();poll()})
 .catch(j=>{bt.disabled=false;bt.textContent="Pagar com Mercado Pago";const m=$("#fe");if(m)m.textContent=((j&&j.erro)||"NÃO FOI POSSÍVEL GERAR O PIX. TENTE NOVAMENTE.")+(j&&j.debug?" "+JSON.stringify(j.debug):"")});return}
-if(CONFIG.checkoutUrl){const q=new URLSearchParams({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,pg:v.pg||"todas",ref:no});const u=CONFIG.checkoutUrl+"?"+q;window.open(u,"_blank");note=`PEDIDO ${no} CRIADO. O MERCADO PAGO ABRIU EM OUTRA ABA. SE NÃO ABRIU, USE O LINK: ${u}`}
-else note=`PEDIDO DE TESTE ${no} REGISTRADO. ISTO É UMA SIMULAÇÃO: NENHUMA COBRANÇA FOI FEITA E NENHUMA COMPRA FOI ENVIADA AO FORNECEDOR.`;
+if(CONFIG.checkoutUrl){const bt=e.target.querySelector("button.btn");bt.disabled=true;bt.textContent="REDIRECIONANDO…";
+fetch(CONFIG.checkoutUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:L.map(i=>i.id+":"+i.s+":"+i.q+":"+i.k).join(","),nome:v.nome,email:v.email,zap:v.zap,cep:v.cep,end:v.end,num:v.num,cid:v.cid,uf:v.uf,pg:v.pg||"todas",ref:no})})
+.then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{if(!ok||!j.url)throw j;location.href=j.url})
+.catch(j=>{bt.disabled=false;bt.textContent="Pagar com Mercado Pago";const m=$("#fe");if(m)m.textContent=((j&&j.erro)||"NÃO FOI POSSÍVEL ABRIR O PAGAMENTO. TENTE NOVAMENTE.")+(j&&j.debug?" "+JSON.stringify(j.debug):"")});return}
+note=`PEDIDO DE TESTE ${no} REGISTRADO. ISTO É UMA SIMULAÇÃO: NENHUMA COBRANÇA FOI FEITA E NENHUMA COMPRA FOI ENVIADA AO FORNECEDOR.`;
 step="done";drawer()}});
 document.addEventListener("keydown",e=>{if(e.key=="Escape")open_(false)});
 function ret(){const s=new URLSearchParams(location.search).get("status")||new URLSearchParams(location.search).get("collection_status");if(!s)return;
@@ -228,7 +266,8 @@ const m={approved:"PAGAMENTO RECEBIDO. ESTAMOS CONFIRMANDO E ENVIAMOS O RASTREIO
 if(s=="approved"||s=="pending"||s=="in_process"){L=[];save()}
 const d=document.createElement("div");d.className="demo mono";d.style.cssText="background:var(--ink);color:var(--bg)";d.textContent=m[s]||"PAGAMENTO NÃO CONCLUÍDO. TENTE NOVAMENTE QUANDO QUISER.";document.body.insertBefore(d,document.body.firstChild);history.replaceState(null,"",location.pathname+location.hash)}
 addEventListener("hashchange",route);save();
-fetch("/api/products").then(r=>r.ok?r.json():Promise.reject()).then(a=>{if(Array.isArray(a)&&a.length){P.length=0;P.push(...a);LIVE=!a.some(p=>p.demo);if(LIVE){const d=$("#demo");d&&d.remove()}}}).catch(()=>{}).finally(()=>{L=L.filter(i=>P.some(p=>p.id==i.id));save();ret();route()});
+const lojaP=fetch("loja.json").then(r=>r.ok?r.json():{}).then(j=>{Object.assign(LOJA,j)}).catch(()=>{});
+fetch("/api/products").then(r=>r.ok?r.json():Promise.reject()).then(a=>{if(Array.isArray(a)&&a.length){P.length=0;P.push(...a);LIVE=!a.some(p=>p.demo);if(LIVE){const d=$("#demo");d&&d.remove()}}}).catch(()=>{}).then(()=>lojaP).finally(()=>{wa();L=L.filter(i=>P.some(p=>p.id==i.id));save();ret();route()});
 </script>
 </body>
 </html>

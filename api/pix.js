@@ -3,6 +3,7 @@
 // Preço e frete são calculados AQUI a partir de data/products.json, nunca do navegador.
 import crypto from "node:crypto";
 import { loadCatalog } from "./_catalog.js";
+import { limited } from "./_limit.js";
 
 const FRETE = 2490, GRATIS_ACIMA = 25000; // em centavos (mesmas regras do site)
 const cents = (n) => Math.round(n * 100);
@@ -10,6 +11,7 @@ const priceOf = (p) => p.promo || p.preco;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ erro: "Método não permitido" });
+  if (limited(req)) return res.status(429).json({ erro: "Muitas tentativas. Aguarde alguns minutos." });
   try {
     const b = req.body || {}, cat = loadCatalog();
     const lines = String(b.items || "").split(",").map((x) => x.split(":"))

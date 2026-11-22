@@ -8,7 +8,7 @@ Loja de moda alternativa: site estático (`public/`), funções serverless (`api
 - `public/index.html` — loja (home, catálogo, produto, sacola, checkout). Fotos em `public/images/`.
 - `data/products.json` — catálogo completo, incluindo custo e link da AliExpress. **Fica fora de `public/`**: nunca é servido diretamente.
 - `api/products.js` — entrega ao site só os campos públicos (sem custo, sem link do fornecedor).
-- `api/checkout.js` — confere preços e variantes no servidor e cria o pagamento no Mercado Pago. Formas: Pix, crédito (até 6x), débito, saldo Mercado Pago ou todas (parâmetro `pg`).
+- `api/checkout.js` — (POST) confere preços e variantes no servidor e cria o pagamento no Mercado Pago (Pix, crédito até 6x, débito, saldo ou todas). Devolve a URL de pagamento.
 - `tools/import-csv.mjs` — converte uma planilha CSV em `data/products.json`.
 - `.env.example` — nomes das variáveis (não commite valores reais).
 
@@ -45,6 +45,12 @@ Não há importação automática por link: a AliExpress só oferece API a parce
 - O Pix expira em 1 hora. Os dados do pedido (itens, tamanho, cor, link da AliExpress, endereço) ficam nos **Logs da Vercel** com a marca `PEDIDO_PIX`; o pagamento confirmado aparece como `PIX_PAGO`. Não há banco de dados nesta versão.
 - No webhook do Mercado Pago, marque também o evento de **Orders** para receber `PAGAMENTO_ORDER` nos logs.
 - Se der erro, cadastre `DEBUG_CHECKOUT=1` na Vercel: o erro do Mercado Pago aparece na sacola.
+
+## Dados da loja e páginas legais
+- `public/loja.json`: e-mail, Instagram, WhatsApp e **dados do vendedor** (nome, CPF/CNPJ, endereço). Preencha o WhatsApp para aparecer o botão flutuante, e o vendedor para aparecer no rodapé e nos termos.
+- Páginas: `#troca`, `#privacidade`, `#termos` e `#contato`. Os textos são um modelo baseado no CDC e na LGPD. Peça a um advogado ou contador que revise antes de vender.
+- `public/404.html` e `public/favicon.svg` já estão incluídos.
+- O checkout do cartão e o Pix agora usam POST: os dados do cliente não vão mais na URL. As rotas têm limite básico de tentativas (`api/_limit.js`).
 
 ## Fluxo de um pedido
 Cliente paga no Mercado Pago → você vê o pagamento aprovado no painel do Mercado Pago → abre os metadados do pagamento (tem produto, tamanho, cor, link da AliExpress, endereço) → compra na AliExpress/DSers com o endereço do cliente → envia o rastreio por WhatsApp/e-mail.
