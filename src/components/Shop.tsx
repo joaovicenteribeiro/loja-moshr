@@ -13,7 +13,7 @@ const cap = (p: PublicProduct) => (p.e == null ? 10 : Math.max(0, Math.min(10, p
 const avail = (p: PublicProduct, s: string, k: string) => (p.demo ? (p.id * 31 + s.charCodeAt(0) + k.charCodeAt(0)) % 6 !== 0 : cap(p) > 0);
 
 type CartItem = { id: number; s: string; k: string; q: number };
-type Pix = { id: string; numero: string; qr: string; qrBase64: string; total: number };
+type Pix = { id: string; numero: string; qr: string; qrBase64: string; total: number; manual?: boolean };
 type View = "home" | "loja" | "produto" | "legal";
 
 const btn = "inline-block bg-[var(--ink)] text-[var(--bg)] border border-[var(--ink)] px-6 py-3.5 no-underline uppercase font-bold text-sm tracking-wider hover:bg-[var(--red)] hover:border-[var(--red)] hover:text-white";
@@ -136,7 +136,7 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
   }, [product?.id]);
 
   useEffect(() => {
-    if (!pix || step !== "pix") return;
+    if (!pix || step !== "pix" || pix.manual) return;
     const t = setInterval(async () => {
       try {
         const r = await fetch("/api/pix-status?id=" + encodeURIComponent(pix.id));
