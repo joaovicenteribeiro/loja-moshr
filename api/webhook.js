@@ -48,6 +48,7 @@ export default async function handler(req, res) {
     // Pix pelo Checkout Transparente chega como notificação de "order".
     if (String(type).startsWith("order") && dataId) {
       const ro = await mpGet(`/v1/orders/${encodeURIComponent(dataId)}`);
+      if ([400, 403, 404].includes(ro.status)) { console.warn("Order não encontrada (id de simulação?):", dataId); return res.status(200).send("não encontrado"); }
       if (!ro.ok) return res.status(500).send("falha ao consultar order");
       const o = await ro.json();
       console.log("PAGAMENTO_ORDER", JSON.stringify({ order: o.id, status: o.status, detalhe: o.status_detail, pedido: o.external_reference, valor: o.total_amount }));
@@ -59,6 +60,7 @@ export default async function handler(req, res) {
     if (type !== "payment" || !dataId) return res.status(200).send("ignorado");
 
     const r = await mpGet(`/v1/payments/${encodeURIComponent(dataId)}`);
+    if ([400, 403, 404].includes(r.status)) { console.warn("Pagamento não encontrado (id de simulação?):", dataId); return res.status(200).send("não encontrado"); }
     if (!r.ok) return res.status(500).send("falha ao consultar pagamento"); // o Mercado Pago tenta de novo
     const p = await r.json();
     // Só "approved" liberado pela API conta como pago. Reenvios do mesmo evento não repetem a mudança.

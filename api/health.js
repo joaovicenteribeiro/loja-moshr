@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     SITE_URL: !!process.env.SITE_URL,
     MP_WEBHOOK_SECRET: !!process.env.MP_WEBHOOK_SECRET,
     mercado_pago_api: "não testado",
-    versao: "db-1",
+    versao: "db-2",
     SUPABASE: dbEnabled(),
     ADMIN_PASSWORD: String(process.env.ADMIN_PASSWORD || "").length >= 12,
     banco: "não testado",
