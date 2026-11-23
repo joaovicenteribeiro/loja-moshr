@@ -50,3 +50,14 @@ export const marcarPago = (numero: string | undefined, detalhe: unknown) =>
 export const encerrar = (numero: string | undefined, status: string, detalhe: unknown) =>
   sairDeAguardando(numero, { status }, status, detalhe);
 export const falhaPedido = (numero: string, motivo: string) => encerrar(numero, "cancelado", { motivo });
+
+export async function consultarPedido(numero: string, email: string) {
+  if (!dbEnabled()) return null;
+  const rows = await db("GET", `pedidos?numero=eq.${enc(numero)}&select=numero,status,total,frete,rastreio,cliente_email,pedido_itens(nome,tamanho,cor,quantidade)`) as {
+    numero: string; status: string; total: number; frete: number; rastreio: string | null; cliente_email: string;
+    pedido_itens: { nome: string; tamanho: string; cor: string; quantidade: number }[];
+  }[];
+  const row = rows?.[0];
+  if (!row || row.cliente_email.toLowerCase() !== email.toLowerCase()) return null;
+  return { numero: row.numero, status: row.status, total: row.total, frete: row.frete, rastreio: row.rastreio, itens: row.pedido_itens || [] };
+}

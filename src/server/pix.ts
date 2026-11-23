@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
-import { loadCatalog } from "./catalog";
+import { loadCatalog, temEstoque } from "./catalog";
+import { aplicarFrete } from "./coupons";
 import { limited } from "./limit";
 import { novoNumero, criarPedido, falhaPedido, definirGateway, marcarPago, encerrar } from "./orders";
 
-const FRETE = 2490, GRATIS_ACIMA = 25000;
 const cents = (n: number) => Math.round(n * 100);
 const priceOf = (p: { promo?: number; preco: number }) => p.promo || p.preco;
 
@@ -21,12 +21,15 @@ export async function postPix(req: Request) {
         return { id, p, size, color: p.cores.includes(color) ? color : p.cores[0], qty: Math.min(Math.max(parseInt(qty) || 1, 1), 10) };
       }).filter((x): x is NonNullable<typeof x> => !!x);
     if (!lines.length) return Response.json({ erro: "Carrinho vazio" }, { status: 400 });
+    if (lines.some((l) => !temEstoque(l.p, l.qty))) return Response.json({ erro: "Sem estoque para a quantidade pedida." }, { status: 400 });
     const email = String(b.email || "").trim().slice(0, 120), nome = String(b.nome || "").trim().slice(0, 100);
     if (!/^\S+@\S+\.\S+$/.test(email)) return Response.json({ erro: "E-mail inválido" }, { status: 400 });
     if (nome.length < 3) return Response.json({ erro: "Informe o nome completo" }, { status: 400 });
 
     const subtotal = lines.reduce((a, l) => a + cents(priceOf(l.p)) * l.qty, 0);
-    const frete = subtotal >= GRATIS_ACIMA ? 0 : FRETE;
+    const desc = aplicarFrete(subtotal / 100, b.cupom);
+    if ("erro" in desc && desc.erro) return Response.json({ erro: desc.erro }, { status: 400 });
+    const frete = cents(desc.frete);
     const total = ((subtotal + frete) / 100).toFixed(2);
     const numero = novoNumero();
     const uf = String(b.uf || "").toUpperCase().slice(0, 2);

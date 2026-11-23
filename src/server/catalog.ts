@@ -18,12 +18,26 @@ export type CatalogProduct = {
   ativo?: boolean;
   custo?: number | null;
   aliexpress?: string | null;
+  estoque?: number | null;
 };
 
+const file = () => path.join(process.cwd(), "data", "products.json");
+
+export function loadAllProducts(): CatalogProduct[] {
+  return JSON.parse(fs.readFileSync(file(), "utf8")) as CatalogProduct[];
+}
+
+export function saveAllProducts(list: CatalogProduct[]) {
+  fs.writeFileSync(file(), JSON.stringify(list, null, 2) + "\n", "utf8");
+}
+
 export function loadCatalog(): Record<string, CatalogProduct> {
-  const file = path.join(process.cwd(), "data", "products.json");
-  const list = JSON.parse(fs.readFileSync(file, "utf8")) as CatalogProduct[];
-  return Object.fromEntries(list.filter((p) => p.ativo !== false).map((p) => [String(p.id), p]));
+  return Object.fromEntries(loadAllProducts().filter((p) => p.ativo !== false).map((p) => [String(p.id), p]));
+}
+
+export function temEstoque(p: CatalogProduct, qty: number) {
+  if (p.estoque == null) return true;
+  return qty <= p.estoque;
 }
 
 export const TIPOS: Record<string, string> = {

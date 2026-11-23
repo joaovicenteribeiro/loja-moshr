@@ -4,6 +4,14 @@ import { limited } from "./limit";
 import { STATUS } from "./orders";
 
 const sha = (s: string) => crypto.createHash("sha256").update(String(s)).digest();
+export function adminGuard(req: Request): Response | null {
+  const headers = { "Cache-Control": "no-store" };
+  if (limited(req, 40)) return Response.json({ erro: "Muitas tentativas. Aguarde." }, { status: 429, headers });
+  if (String(process.env.ADMIN_PASSWORD || "").length < 12) return Response.json({ erro: "Defina ADMIN_PASSWORD com 12 ou mais caracteres." }, { status: 503, headers });
+  if (!autorizado(req)) return Response.json({ erro: "Senha incorreta" }, { status: 401, headers });
+  return null;
+}
+
 const autorizado = (req: Request) => {
   const pw = String(process.env.ADMIN_PASSWORD || "");
   if (pw.length < 12) return false;
@@ -12,10 +20,9 @@ const autorizado = (req: Request) => {
 
 export async function adminPedidos(req: Request) {
   const headers = { "Cache-Control": "no-store" };
-  if (limited(req, 40)) return Response.json({ erro: "Muitas tentativas. Aguarde." }, { status: 429, headers });
+  const negado = adminGuard(req);
+  if (negado) return negado;
   if (!dbEnabled()) return Response.json({ erro: "Banco não configurado (SUPABASE_URL e SUPABASE_SECRET_KEY)." }, { status: 503, headers });
-  if (String(process.env.ADMIN_PASSWORD || "").length < 12) return Response.json({ erro: "Defina ADMIN_PASSWORD com 12 ou mais caracteres." }, { status: 503, headers });
-  if (!autorizado(req)) return Response.json({ erro: "Senha incorreta" }, { status: 401, headers });
   try {
     if (req.method === "GET") {
       const st = new URL(req.url).searchParams.get("status") || "";

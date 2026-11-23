@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { LojaForm, Pecas } from "./AdminCatalog";
 
 const ST: Record<string, string> = {
   aguardando_pagamento: "Aguardando pagamento", pago: "Pago", em_processamento: "Em processamento",
@@ -22,6 +23,7 @@ export function Admin() {
   const [status, setStatus] = useState("");
   const [rows, setRows] = useState<Pedido[]>([]);
   const [err, setErr] = useState("");
+  const [tab, setTab] = useState<"pedidos" | "pecas" | "loja">("pecas");
 
   async function fetchRows(password: string, st: string) {
     const r = await fetch("/api/admin/pedidos" + (st ? `?status=${st}` : ""), { headers: { "x-admin-password": password } });
@@ -54,7 +56,7 @@ export function Admin() {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <header className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3.5">
-        <b className="font-black tracking-[0.12em]">MOSHR · PEDIDOS</b>
+        <b className="font-black tracking-[0.12em]">MOSHR · ADMIN</b>
         {ok && <button className="border border-[var(--line)] bg-transparent px-3 py-2 text-xs font-bold uppercase text-[var(--ink)]" onClick={() => { sessionStorage.removeItem("moshr-admin"); setOk(false); setPw(""); }}>Sair</button>}
       </header>
       <main className="mx-auto max-w-[960px] px-5 py-5">
@@ -64,6 +66,14 @@ export function Admin() {
         </form>}
         <p className="min-h-[1.3em] text-center font-mono text-xs text-[var(--rt)]">{msg}</p>
         {ok && <>
+          <div className="mb-4 flex gap-2">
+            {([["pecas", "Peças"], ["pedidos", "Pedidos"], ["loja", "Loja"]] as const).map(([id, label]) => (
+              <button key={id} className={`border px-3 py-2 text-xs font-bold uppercase ${tab === id ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--bg)]" : "border-[var(--line)] bg-transparent"}`} onClick={() => setTab(id)}>{label}</button>
+            ))}
+          </div>
+          {tab === "pecas" && <Pecas pw={pw} />}
+          {tab === "loja" && <LojaForm pw={pw} />}
+          {tab === "pedidos" && <>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <select aria-label="Filtrar por status" value={status} onChange={async (e) => { const st = e.target.value; setStatus(st); try { setRows(await fetchRows(pw, st)); } catch (x) { setErr((x as Error).message); } }} className="border border-[var(--line)] bg-transparent px-2 py-2">
               <option value="">Todos os status</option>
@@ -80,6 +90,7 @@ export function Admin() {
             if (!r.ok) throw new Error(j.erro || "Erro");
             setRows(await fetchRows(pw, status));
           }} />)}
+          </>}
         </>}
       </main>
     </div>

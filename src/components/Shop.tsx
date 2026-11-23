@@ -9,7 +9,8 @@ const C: Record<string, string> = { grunge: "Grunge", goth: "Goth", punk: "Punk"
 const TL: Record<string, string> = { camisas: "Camisas", camisetas: "Camisetas", casacos: "Jaquetas / Moletons", calcas: "Calças", calcados: "Calçados", acessorios: "Acessórios" };
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const priceOf = (p: PublicProduct) => p.d || p.p;
-const avail = (p: PublicProduct, s: string, k: string) => (p.id * 31 + s.charCodeAt(0) + k.charCodeAt(0)) % 6 !== 0;
+const cap = (p: PublicProduct) => (p.e == null ? 10 : Math.max(0, Math.min(10, p.e)));
+const avail = (p: PublicProduct, s: string, k: string) => (p.demo ? (p.id * 31 + s.charCodeAt(0) + k.charCodeAt(0)) % 6 !== 0 : cap(p) > 0);
 
 type CartItem = { id: number; s: string; k: string; q: number };
 type Pix = { id: string; numero: string; qr: string; qrBase64: string; total: number };
@@ -37,7 +38,7 @@ function Card({ p }: { p: PublicProduct }) {
       <div className="grid gap-1.5 p-3">
         <span className="font-mono text-xs">{C[p.c] || p.c}</span>
         <h3 className="text-base font-black uppercase leading-tight">{p.n}</h3>
-        <span className="font-mono text-xs">{p.d ? <><s className="opacity-55">{brl(p.p)}</s> <b className="text-[var(--rt)]">{brl(p.d)}</b></> : brl(p.p)}</span>
+        <span className="font-mono text-xs">{p.e === 0 ? "ESGOTADO · " : ""}{p.d ? <><s className="opacity-55">{brl(p.p)}</s> <b className="text-[var(--rt)]">{brl(p.d)}</b></> : brl(p.p)}</span>
       </div>
     </Link>
   );
@@ -100,6 +101,9 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
   const [pm, setPm] = useState("");
   const [payErr, setPayErr] = useState("");
   const [paying, setPaying] = useState(false);
+  const [cupom, setCupom] = useState("");
+  const [cupomOk, setCupomOk] = useState("");
+  const [cupomMsg, setCupomMsg] = useState("");
   const [nl, setNl] = useState("");
   const [banner, setBanner] = useState("");
   const [q, setQ] = useState(params.get("q") || "");
@@ -153,16 +157,17 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
   const tipos = Object.keys(TL).filter((k) => products.some((p) => p.g === k));
   const totals = useMemo(() => {
     const s = cart.reduce((a, i) => { const p = products.find((x) => x.id === i.id); return a + (p ? priceOf(p) * i.q : 0); }, 0);
-    const f = !s || s >= 250 ? 0 : 24.9;
+    const f = !s || s >= 250 || cupomOk ? 0 : 24.9;
     return { s, f, t: s + f };
-  }, [cart, products]);
+  }, [cart, products, cupomOk]);
 
   function setQty(i: number, d: number) {
     setCart((list) => list.flatMap((item, idx) => {
       if (idx !== i) return [item];
       const qn = item.q + d;
       if (qn < 1) return [];
-      return [{ ...item, q: Math.min(10, qn) }];
+      const p = products.find((x) => x.id === item.id);
+      return [{ ...item, q: Math.min(p ? cap(p) : 10, qn) }];
     }));
   }
 
@@ -177,7 +182,7 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
     if (!v.end.trim() || !v.num.trim() || !v.cid.trim() || v.uf.trim().length !== 2) return er("COMPLETE O ENDEREÇO, CIDADE E UF.");
     setPayErr("");
     setPaying(true);
-    const body = JSON.stringify({ items: cart.map((i) => `${i.id}:${i.s}:${i.q}:${i.k}`).join(","), ...v });
+    const body = JSON.stringify({ items: cart.map((i) => `${i.id}:${i.s}:${i.q}:${i.k}`).join(","), ...v, cupom: cupomOk });
     try {
       if (v.pg === "pix") {
         const r = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body });
@@ -312,13 +317,15 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
                 <p>{product.desc || "Peça de demonstração da coleção 01. Descrição fictícia para teste de layout."}</p>
                 <div><p className="mb-2 text-xs font-bold uppercase tracking-wider">Cor: {sel.k}</p><div className="flex flex-wrap gap-1.5">{product.k.map((k) => <button key={k} className={chip} aria-pressed={sel.k === k} onClick={() => setSel({ ...sel, k, s: "" })}>{k}</button>)}</div></div>
                 <div><p className="mb-2 text-xs font-bold uppercase tracking-wider">Tamanho</p><div className="flex flex-wrap gap-1.5">{product.s.map((s) => <button key={s} className={chip} disabled={!avail(product, s, sel.k)} aria-pressed={sel.s === s} onClick={() => setSel({ ...sel, s })}>{s}</button>)}</div></div>
-                <div><p className="mb-2 text-xs font-bold uppercase tracking-wider">Quantidade</p><div className="inline-flex border border-[var(--line)]"><button className="h-9 w-9 bg-transparent" aria-label="Diminuir" onClick={() => setSel({ ...sel, q: Math.max(1, sel.q - 1) })}>−</button><span className="w-9 text-center leading-9">{sel.q}</span><button className="h-9 w-9 bg-transparent" aria-label="Aumentar" onClick={() => setSel({ ...sel, q: Math.min(10, sel.q + 1) })}>+</button></div></div>
-                <button className={btn} onClick={() => {
+                <div><p className="mb-2 text-xs font-bold uppercase tracking-wider">Quantidade{product.e != null ? ` · ${product.e} em estoque` : ""}</p><div className="inline-flex border border-[var(--line)]"><button className="h-9 w-9 bg-transparent" aria-label="Diminuir" onClick={() => setSel({ ...sel, q: Math.max(1, sel.q - 1) })}>−</button><span className="w-9 text-center leading-9">{sel.q}</span><button className="h-9 w-9 bg-transparent" aria-label="Aumentar" onClick={() => setSel({ ...sel, q: Math.min(cap(product), sel.q + 1) })}>+</button></div></div>
+                <button className={btn} disabled={cap(product) < 1} onClick={() => {
+                  if (cap(product) < 1) { setPm("ESGOTADO."); return; }
                   if (!sel.s) { setPm("ESCOLHA UM TAMANHO."); return; }
                   setCart((list) => {
                     const f = list.find((i) => i.id === product.id && i.s === sel.s && i.k === sel.k);
-                    if (f) return list.map((i) => i === f ? { ...i, q: Math.min(10, i.q + sel.q) } : i);
-                    return [...list, { id: product.id, s: sel.s, k: sel.k, q: sel.q }];
+                    const max = cap(product);
+                    if (f) return list.map((i) => i === f ? { ...i, q: Math.min(max, i.q + sel.q) } : i);
+                    return [...list, { id: product.id, s: sel.s, k: sel.k, q: Math.min(max, sel.q) }];
                   });
                   setStep("cart"); setOpen(true);
                 }}>Adicionar à sacola</button>
@@ -348,7 +355,7 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
       <footer className="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-5 px-5 py-9 font-mono text-xs">
         <span>© MOSHR — WEAR YOUR OWN IDENTITY.</span>
         <span>{contacts(loja)}</span>
-        <span><Link href="/troca">Troca e devolução</Link> · <Link href="/privacidade">Privacidade</Link> · <Link href="/termos">Termos</Link> · <Link href="/contato">Contato</Link></span>
+        <span><Link href="/pedido">Acompanhar pedido</Link> · <Link href="/troca">Troca e devolução</Link> · <Link href="/privacidade">Privacidade</Link> · <Link href="/termos">Termos</Link> · <Link href="/contato">Contato</Link></span>
         {vendor(loja) ? <span>{vendor(loja)}</span> : null}
         {!live && <span>DEMO · NÃO É UMA OFERTA REAL</span>}
       </footer>
@@ -372,7 +379,19 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
             if (!p) return null;
             return <div key={`${i.id}-${i.s}-${i.k}`} className="grid grid-cols-[56px_1fr_auto] items-center gap-3 border-t border-[var(--line)] py-3"><div className="text-[0.55rem]"><Ph p={p} /></div><div><b>{p.n}</b><br /><span className="font-mono text-xs">{i.k} · {i.s} · {brl(priceOf(p))}</span></div><div className="inline-flex border border-[var(--line)]"><button className="h-9 w-9 bg-transparent" aria-label="Diminuir" onClick={() => setQty(k, -1)}>−</button><span className="w-9 text-center leading-9">{i.q}</span><button className="h-9 w-9 bg-transparent" aria-label="Aumentar" onClick={() => setQty(k, 1)}>+</button></div></div>;
           })}
-          <p className="mb-1 mt-3 font-mono text-xs">{totals.s >= 250 ? "VOCÊ GANHOU FRETE GRÁTIS" : `FALTAM ${brl(250 - totals.s)} PARA FRETE GRÁTIS`}</p>
+          <div className="mt-3 flex gap-2">
+            <input value={cupom} onChange={(e) => setCupom(e.target.value.toUpperCase())} placeholder="CUPOM" aria-label="Cupom" className="min-w-0 flex-1 border border-[var(--line)] bg-transparent px-3 py-2 font-mono text-xs" />
+            <button type="button" className="border border-[var(--line)] bg-transparent px-3 py-2 text-xs font-bold uppercase" onClick={async () => {
+              const codigo = cupom.trim().toUpperCase();
+              if (!codigo) { setCupomOk(""); setCupomMsg(""); return; }
+              const r = await fetch("/api/cupom?codigo=" + encodeURIComponent(codigo));
+              const j = await r.json().catch(() => ({}));
+              if (!r.ok) { setCupomOk(""); setCupomMsg(j.erro || "CUPOM INVÁLIDO."); return; }
+              setCupom(codigo); setCupomOk(codigo); setCupomMsg("CUPOM APLICADO: FRETE GRÁTIS.");
+            }}>Aplicar</button>
+          </div>
+          <p className="min-h-[1.2em] font-mono text-xs text-[var(--rt)]">{cupomMsg}</p>
+          <p className="mb-1 mt-3 font-mono text-xs">{totals.f ? `FALTAM ${brl(Math.max(0, 250 - totals.s))} PARA FRETE GRÁTIS` : "FRETE GRÁTIS"}</p>
           <div className="h-1 bg-[var(--line)]"><div className="h-1 bg-[var(--red)]" style={{ width: `${Math.min(100, totals.s / 2.5)}%` }} /></div>
           <div className="mt-auto grid gap-1 border-t border-[var(--line)] pt-3 font-mono text-xs">
             <div className="flex justify-between"><span>SUBTOTAL</span><span>{brl(totals.s)}</span></div>
@@ -384,7 +403,16 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
               <input name="nome" placeholder="Nome completo" autoComplete="name" className="border border-[var(--line)] bg-transparent px-3 py-2.5" />
               <input name="email" type="email" placeholder="E-mail" autoComplete="email" className="border border-[var(--line)] bg-transparent px-3 py-2.5" />
               <input name="zap" placeholder="Telefone com DDD" autoComplete="tel" className="border border-[var(--line)] bg-transparent px-3 py-2.5" />
-              <div className="grid grid-cols-2 gap-2"><input name="cep" placeholder="CEP" autoComplete="postal-code" className="border border-[var(--line)] bg-transparent px-3 py-2.5" /><input name="num" placeholder="Número" className="border border-[var(--line)] bg-transparent px-3 py-2.5" /></div>
+              <div className="grid grid-cols-2 gap-2"><input name="cep" placeholder="CEP" autoComplete="postal-code" className="border border-[var(--line)] bg-transparent px-3 py-2.5" onBlur={async (e) => {
+                const cep = e.target.value.replace(/\D/g, "");
+                if (cep.length !== 8) return;
+                const j = await fetch("https://viacep.com.br/ws/" + cep + "/json/").then((r) => r.json()).catch(() => null);
+                const form = e.target.form;
+                if (!j || j.erro || !form) return;
+                (form.elements.namedItem("end") as HTMLInputElement).value = j.logradouro || "";
+                (form.elements.namedItem("cid") as HTMLInputElement).value = j.localidade || "";
+                (form.elements.namedItem("uf") as HTMLInputElement).value = j.uf || "";
+              }} /><input name="num" placeholder="Número" className="border border-[var(--line)] bg-transparent px-3 py-2.5" /></div>
               <input name="end" placeholder="Endereço" autoComplete="street-address" className="border border-[var(--line)] bg-transparent px-3 py-2.5" />
               <div className="grid grid-cols-2 gap-2"><input name="cid" placeholder="Cidade" className="border border-[var(--line)] bg-transparent px-3 py-2.5" /><input name="uf" placeholder="UF" maxLength={2} className="border border-[var(--line)] bg-transparent px-3 py-2.5" /></div>
               <fieldset className="grid gap-1.5 border border-[var(--line)] p-2.5"><legend className="px-1 font-mono text-xs">FORMA DE PAGAMENTO</legend>

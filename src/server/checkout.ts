@@ -1,8 +1,7 @@
-import { loadCatalog } from "./catalog";
+import { loadCatalog, temEstoque } from "./catalog";
+import { aplicarFrete } from "./coupons";
 import { limited } from "./limit";
 import { novoNumero, criarPedido, falhaPedido, definirGateway } from "./orders";
-
-const FRETE = 24.9, GRATIS_ACIMA = 250;
 const priceOf = (p: { promo?: number; preco: number }) => p.promo || p.preco;
 const ALL_TYPES = ["credit_card", "debit_card", "bank_transfer", "ticket"];
 const ALLOW: Record<string, string[]> = { pix: ["bank_transfer"], credito: ["credit_card"], debito: ["debit_card"], mp: [] };
@@ -26,12 +25,16 @@ export async function postCheckout(req: Request) {
         return { id, p, size, color: p.cores.includes(color) ? color : p.cores[0], qty: Math.min(Math.max(parseInt(qty) || 1, 1), 10) };
       }).filter((x): x is NonNullable<typeof x> => !!x);
     if (!lines.length) return Response.json({ erro: "Carrinho vazio" }, { status: 400 });
+    const semEstoque = lines.find((l) => !temEstoque(l.p, l.qty));
+    if (semEstoque) return Response.json({ erro: `${semEstoque.p.nome} não tem estoque suficiente.` }, { status: 400 });
     if (!/^\S+@\S+\.\S+$/.test(String(q.email || "").trim())) return Response.json({ erro: "E-mail inválido" }, { status: 400 });
     const nome = String(q.nome || "").trim().slice(0, 100);
     if (nome.length < 3) return Response.json({ erro: "Informe o nome completo" }, { status: 400 });
 
     const subtotal = lines.reduce((a, l) => a + priceOf(l.p) * l.qty, 0);
-    const frete = subtotal >= GRATIS_ACIMA ? 0 : FRETE;
+    const desc = aplicarFrete(subtotal, q.cupom);
+    if ("erro" in desc && desc.erro) return Response.json({ erro: desc.erro }, { status: 400 });
+    const frete = desc.frete;
     const numero = novoNumero();
     try {
       await criarPedido({
