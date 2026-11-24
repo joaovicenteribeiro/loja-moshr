@@ -13,7 +13,7 @@ const cap = (p: PublicProduct) => (p.e == null ? 10 : Math.max(0, Math.min(10, p
 const avail = (p: PublicProduct, s: string, k: string) => (p.demo ? (p.id * 31 + s.charCodeAt(0) + k.charCodeAt(0)) % 6 !== 0 : cap(p) > 0);
 
 type CartItem = { id: number; s: string; k: string; q: number };
-type Pix = { id: string; numero: string; qr: string; qrBase64: string; total: number; manual?: boolean };
+type Pix = { id: string; numero: string; email: string; qr: string; qrBase64: string; total: number; manual?: boolean };
 type View = "home" | "loja" | "produto" | "legal";
 
 const btn = "inline-block bg-[var(--ink)] text-[var(--bg)] border border-[var(--ink)] px-6 py-3.5 no-underline uppercase font-bold text-sm tracking-wider hover:bg-[var(--red)] hover:border-[var(--red)] hover:text-white";
@@ -117,14 +117,24 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
 
   useEffect(() => {
     try { setCart(JSON.parse(localStorage.getItem("moshr-cart") || "[]")); } catch { /* vazio */ }
+    const paymentId = params.get("payment_id") || params.get("collection_id") || "";
     const s = params.get("status") || params.get("collection_status");
-    const m: Record<string, string> = {
-      approved: "PAGAMENTO RECEBIDO. ESTAMOS CONFIRMANDO E ENVIAMOS O RASTREIO POR WHATSAPP.",
-      pending: "PAGAMENTO PENDENTE. ASSIM QUE FOR CONFIRMADO, SEU PEDIDO SEGUE PARA ENVIO.",
-      in_process: "PAGAMENTO EM ANÁLISE. AVISAMOS ASSIM QUE FOR CONCLUÍDO.",
-    };
-    if (s && m[s]) { setBanner(m[s]); setCart([]); localStorage.removeItem("moshr-cart"); }
-    else if (s) setBanner("PAGAMENTO NÃO CONCLUÍDO. TENTE NOVAMENTE QUANDO QUISER.");
+    if (!paymentId && !s) return;
+    if (!paymentId) {
+      setBanner(s === "approved" || s === "pending" || s === "in_process" ? "PAGAMENTO EM CONFIRMAÇÃO." : "PAGAMENTO NÃO CONCLUÍDO. TENTE NOVAMENTE QUANDO QUISER.");
+      return;
+    }
+    fetch("/api/pagamento?payment_id=" + encodeURIComponent(paymentId))
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.paid) {
+          setBanner(`PAGAMENTO CONFIRMADO! PEDIDO ${j.numero}. AVISAMOS PELO WHATSAPP QUANDO O PRODUTO FOR ENVIADO.`);
+          setCart([]);
+          localStorage.removeItem("moshr-cart");
+        } else if (j.status === "pending" || j.status === "in_process") setBanner("PAGAMENTO EM ANÁLISE. O PEDIDO CONFIRMA SOZINHO QUANDO O MERCADO PAGO APROVAR.");
+        else setBanner("PAGAMENTO NÃO CONCLUÍDO. TENTE NOVAMENTE QUANDO QUISER.");
+      })
+      .catch(() => setBanner("NÃO FOI POSSÍVEL CONFERIR O PAGAMENTO. VEJA O PEDIDO NO PAINEL."));
   }, [params]);
 
   useEffect(() => { localStorage.setItem("moshr-cart", JSON.stringify(cart)); }, [cart]);
@@ -144,9 +154,8 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
         if (j.paid) {
           clearInterval(t);
           setCart([]);
-          setNote(`PAGAMENTO CONFIRMADO! PEDIDO ${pix.numero}. AVISAMOS PELO WHATSAPP QUANDO O PRODUTO FOR ENVIADO.`);
-          setPix(null);
-          setStep("done");
+          localStorage.removeItem("moshr-cart");
+          router.push(`/pedido?numero=${encodeURIComponent(pix.numero)}&email=${encodeURIComponent(pix.email)}&pago=1`);
         } else if (j.final) setPixMsg("PIX EXPIRADO OU CANCELADO. FAÇA UM NOVO PEDIDO.");
       } catch { /* tenta de novo */ }
     }, 4000);
@@ -188,9 +197,9 @@ function ShopInner({ products, loja, view, productId, legal }: { products: Publi
         const r = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body });
         const j = await r.json();
         if (!r.ok || !j.qr) throw j;
-        setPix({ id: j.id, numero: j.numero, qr: j.qr, qrBase64: j.qrBase64, total: j.total });
+        setPix({ id: j.id, numero: j.numero, email: v.email.trim(), qr: j.qr, qrBase64: j.qrBase64, total: j.total, manual: !!j.manual });
         setStep("pix");
-        setPixMsg("AGUARDANDO PAGAMENTO…");
+        setPixMsg("AGUARDANDO PAGAMENTO… CONFERINDO A CADA 4 SEGUNDOS.");
       } else {
         const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body });
         const j = await r.json();

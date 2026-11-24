@@ -51,7 +51,13 @@ export async function postCheckout(req: Request) {
     }
 
     let site = String(process.env.SITE_URL || "").trim().replace(/\/+$/, "");
-    if (site && !/^https:\/\//.test(site)) site = /^http:\/\//.test(site) ? "" : "https://" + site;
+    if (site && !/^https?:\/\//.test(site)) site = "https://" + site;
+    if (!site) {
+      try {
+        const origem = new URL(req.headers.get("origin") || req.url);
+        if (origem.hostname === "localhost" || origem.hostname === "127.0.0.1") site = origem.origin;
+      } catch { /* sem origem */ }
+    }
 
     const preference: Record<string, unknown> = {
       items: lines.map((l) => ({ id: String(l.id), title: `${l.p.nome} (${l.size} / ${l.color})`, quantity: l.qty, currency_id: "BRL", unit_price: +priceOf(l.p).toFixed(2) })),
@@ -66,7 +72,11 @@ export async function postCheckout(req: Request) {
       metadata: { cep: String(q.cep || "").replace(/\D/g, ""), numero: q.num, cidade: q.cid, uf: q.uf,
         fornecedor: lines.map((l) => `${l.qty}x ${l.p.nome} | ${l.size} | ${l.color} | ${l.p.aliexpress || "link não cadastrado"}`) },
     };
-    if (site) { preference.back_urls = { success: site, pending: site, failure: site }; preference.auto_return = "approved"; }
+    if (site) {
+      preference.back_urls = { success: site, pending: site, failure: site };
+      preference.auto_return = "approved";
+      if (site.startsWith("https://") && !/localhost|127\.0\.0\.1/.test(site)) preference.notification_url = site + "/api/webhook";
+    }
 
     const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
@@ -77,7 +87,8 @@ export async function postCheckout(req: Request) {
     if (!r.ok || !data.init_point) {
       console.error("Mercado Pago recusou a preferência:", r.status, JSON.stringify(data));
       await falhaPedido(numero, "mercado_pago_recusou").catch(() => {});
-      const out: Record<string, unknown> = { erro: "Não foi possível abrir o pagamento. Tente novamente." };
+      const detalhe = data?.message || data?.cause?.[0]?.description || "";
+      const out: Record<string, unknown> = { erro: detalhe ? `Mercado Pago: ${detalhe}` : "Não foi possível abrir o pagamento. Tente novamente." };
       if (process.env.DEBUG_CHECKOUT === "1") out.debug = { mp_status: r.status, mp: data };
       return Response.json(out, { status: 502 });
     }

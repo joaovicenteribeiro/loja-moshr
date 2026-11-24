@@ -10,12 +10,19 @@ export type PublicProduct = {
   e: number | null;
 };
 
+function foto(src?: string) {
+  const s = String(src || "").trim();
+  if (!s || s.startsWith("/") || /^https?:\/\//.test(s)) return s;
+  return "/" + s.replace(/^\.\//, "");
+}
+
 export function publicCatalog(): PublicProduct[] {
   return Object.values(loadCatalog()).map((p) => ({
     id: p.id, n: p.nome, c: p.categoria, g: normTipo(p.tipo) || "outros",
     t: CURTO[normTipo(p.tipo) || ""] || String(p.tipo || "PEÇA").toUpperCase(),
     p: p.preco, d: p.promo || 0, s: p.tamanhos, k: p.cores,
-    img: p.imagem || "", imgs: p.imagens || {}, desc: p.descricao || "", med: p.medidas || "", demo: !!p.demo,
+    img: foto(p.imagem), imgs: Object.fromEntries(Object.entries(p.imagens || {}).map(([k, v]) => [k, foto(v)])),
+    desc: p.descricao || "", med: p.medidas || "", demo: !!p.demo,
     e: p.estoque == null ? null : Number(p.estoque),
   }));
 }

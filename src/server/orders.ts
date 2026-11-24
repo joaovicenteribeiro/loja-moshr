@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { avisarDono } from "./avisar";
 import { db, dbEnabled, enc } from "./db";
 
 export const STATUS = ["aguardando_pagamento", "pago", "em_processamento", "comprado_fornecedor", "enviado", "entregue", "cancelado", "expirado"];
@@ -45,8 +46,11 @@ async function sairDeAguardando(numero: string | undefined, campos: Record<strin
   return false;
 }
 
-export const marcarPago = (numero: string | undefined, detalhe: unknown) =>
-  sairDeAguardando(numero, { status: "pago", pago_em: new Date().toISOString() }, "pago", detalhe);
+export async function marcarPago(numero: string | undefined, detalhe: unknown) {
+  const ok = await sairDeAguardando(numero, { status: "pago", pago_em: new Date().toISOString() }, "pago", detalhe);
+  if (ok && numero) await avisarDono(numero).catch((e) => console.error("aviso:", (e as Error).message));
+  return ok;
+}
 export const encerrar = (numero: string | undefined, status: string, detalhe: unknown) =>
   sairDeAguardando(numero, { status }, status, detalhe);
 export const falhaPedido = (numero: string, motivo: string) => encerrar(numero, "cancelado", { motivo });

@@ -39,7 +39,7 @@ export function Pecas({ pw }: { pw: string }) {
       {edit && <PecaForm pw={pw} peca={edit} onClose={() => setEdit(null)} onSaved={async (m) => { setMsg(m); setEdit(null); await load(); }} />}
       {rows.map((p) => (
         <article key={p.id} className="grid grid-cols-[72px_1fr_auto] items-center gap-3 border border-[var(--line)] p-3">
-          {p.imagem ? <img src={p.imagem} alt="" className="h-20 w-[72px] object-cover" /> : <div className="h-20 bg-[var(--ph1)]" />}
+          {p.imagem ? <img src={p.imagem.startsWith("http") || p.imagem.startsWith("/") ? p.imagem : "/" + p.imagem} alt="" className="h-20 w-[72px] object-cover" /> : <div className="h-20 bg-[var(--ph1)]" />}
           <div>
             <b>{p.nome}</b> {p.ativo === false ? <span className="font-mono text-xs">OCULTA</span> : null}
             <br /><span className="font-mono text-xs">{p.tipo} · {p.categoria} · R$ {p.preco} · estoque {p.estoque == null ? "livre" : p.estoque}</span>

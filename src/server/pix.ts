@@ -1,8 +1,8 @@
-import crypto from "node:crypto";
 import { loadCatalog, temEstoque } from "./catalog";
 import { aplicarFrete } from "./coupons";
 import { limited } from "./limit";
-import { novoNumero, criarPedido, falhaPedido, definirGateway, marcarPago, encerrar } from "./orders";
+import { novoNumero, criarPedido, marcarPago, encerrar } from "./orders";
+import { payloadPix, qrPix } from "./pix-brcode";
 
 const cents = (n: number) => Math.round(n * 100);
 const priceOf = (p: { promo?: number; preco: number }) => p.promo || p.preco;
@@ -48,42 +48,42 @@ export async function postPix(req: Request) {
       return Response.json({ erro: "Não foi possível registrar o pedido. Tente novamente." }, { status: 500 });
     }
 
-    const order: Record<string, unknown> = {
-      type: "online", total_amount: total, external_reference: numero, processing_mode: "automatic",
-      transactions: { payments: [{ amount: total, payment_method: { id: "pix", type: "bank_transfer" }, expiration_time: "PT1H" }] },
-      payer: { email },
-    };
-    if (/^[A-Z]{2}$/.test(uf)) order.config = { location: { state_id: `BR-${uf}` } };
-
-    const r = await fetch("https://api.mercadopago.com/v1/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-        "X-Idempotency-Key": crypto.createHash("sha256").update(numero).digest("hex"),
-      },
-      body: JSON.stringify(order),
-    });
-    const data = await r.json();
-    const pm = data?.transactions?.payments?.[0]?.payment_method || {};
-    if (!r.ok || !pm.qr_code) {
-      console.error("Mercado Pago recusou a order Pix:", r.status, JSON.stringify(data));
-      await falhaPedido(numero, "mercado_pago_recusou").catch(() => {});
-      const out: Record<string, unknown> = { erro: "Não foi possível gerar o Pix. Tente novamente." };
-      if (process.env.DEBUG_CHECKOUT === "1") out.debug = { mp_status: r.status, mp: data };
-      return Response.json(out, { status: 502 });
-    }
-    await definirGateway(numero, data.id).catch((e) => console.error("gateway_id:", (e as Error).message));
-    return Response.json({ id: data.id, numero, qr: pm.qr_code, qrBase64: pm.qr_code_base64, ticketUrl: pm.ticket_url, total: Number(total) });
+    const chave = String(process.env.PIX_CHAVE || "moshrstore@gmail.com").trim();
+    const qr = payloadPix(chave, total, numero);
+    return Response.json({ id: numero, numero, email, qr, qrBase64: await qrPix(qr), total: Number(total) });
   } catch (e) {
     console.error("pix erro", (e as Error).message);
     return Response.json({ erro: "Erro interno" }, { status: 500 });
   }
 }
 
+async function pixRecebido(numero: string) {
+  const ref = numero.replace(/[^A-Za-z0-9]/g, "");
+  const q = new URLSearchParams({
+    sort: "date_created", criteria: "desc", range: "date_created", limit: "30",
+    begin_date: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    end_date: new Date().toISOString(),
+  });
+  const r = await fetch(`https://api.mercadopago.com/v1/payments/search?${q}`, {
+    headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+  });
+  if (!r.ok) return null;
+  const data = await r.json();
+  return (data.results || []).find((p: { status?: string; description?: string; payment_method_id?: string; id?: number }) =>
+    p.status === "approved" && p.payment_method_id === "pix" && String(p.description || "").toUpperCase() === ref) || null;
+}
+
 export async function getPixStatus(req: Request) {
   try {
     const id = new URL(req.url).searchParams.get("id") || "";
+    if (/^MSH-[A-Z0-9]{8}$/.test(id)) {
+      const pago = await pixRecebido(id);
+      if (pago) {
+        await marcarPago(id, { payment: pago.id, via: "consulta" }).catch((e) => console.error("banco:", (e as Error).message));
+        return Response.json({ paid: true, status: "approved" }, { headers: { "Cache-Control": "no-store" } });
+      }
+      return Response.json({ paid: false, status: "pending" }, { headers: { "Cache-Control": "no-store" } });
+    }
     if (!/^[A-Za-z0-9]{10,40}$/.test(id)) return Response.json({ erro: "id inválido" }, { status: 400 });
     const r = await fetch(`https://api.mercadopago.com/v1/orders/${id}`, {
       headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
