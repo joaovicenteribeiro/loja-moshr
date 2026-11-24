@@ -48,8 +48,7 @@ export async function postPix(req: Request) {
       return Response.json({ erro: "Não foi possível registrar o pedido. Tente novamente." }, { status: 500 });
     }
 
-    const chave = String(process.env.PIX_CHAVE || "moshrstore@gmail.com").trim();
-    const qr = payloadPix(chave, total, numero);
+    const qr = payloadPix("moshrstore@gmail.com", total, numero);
     return Response.json({ id: numero, numero, email, qr, qrBase64: await qrPix(qr), total: Number(total) });
   } catch (e) {
     console.error("pix erro", (e as Error).message);
