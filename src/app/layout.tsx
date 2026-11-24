@@ -8,6 +8,7 @@ const mono = Space_Mono({ subsets: ["latin"], weight: ["400", "700"], variable: 
 export const metadata: Metadata = {
   title: "MOSHR – Wear your own identity.",
   description: "MOSHR: moda alternativa independente. Grunge, goth, punk, emo, cyber e streetwear. Envio para todo o Brasil.",
+  icons: { icon: "/logo.png", apple: "/logo.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
